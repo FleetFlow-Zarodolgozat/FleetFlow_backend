@@ -8,5 +8,6 @@
         public bool? IsActive { get; set; }
         public string LicenseNumber { get; set; } = "";
         public DateTime? LicenseExpiryDate { get; set; }
+        public string? Notes { get; set; }
     }
 }

@@ -36,13 +36,22 @@ namespace backend.Controllers
                         Phone = user.Phone,
                         LicenseNumber = driver.LicenseNumber,
                         LicenseExpiryDate = driver.LicenseExpiryDate,
-                        IsActive = user.IsActive
+                        IsActive = user.IsActive,
+                        Notes = driver.Notes
                     }
                 );
 
             // 🔎 Szűrés
-            if (!string.IsNullOrWhiteSpace(query.StringQ))
-                usersQuery = usersQuery.Where(x => x.FullName.ToLower().Contains(query.StringQ) || x.LicenseNumber.ToLower().Contains(query.StringQ) || x.Email.ToLower().Contains(query.StringQ) || x.Phone!.Contains(query.StringQ));
+            var q = query.StringQ?.Trim();
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                usersQuery = usersQuery.Where(x =>
+                    x.FullName.Contains(q) ||
+                    x.Email.Contains(q) ||
+                    x.LicenseNumber.Contains(q) ||
+                    (x.Phone != null && x.Phone.Contains(q))
+                );
+            }
 
             if (query.IsActiveQ == false)
                 usersQuery = usersQuery.Where(x => x.IsActive == false);
@@ -52,20 +61,32 @@ namespace backend.Controllers
             // 🔥 Paging előtt megszámoljuk!
             var totalCount = await usersQuery.CountAsync();
 
+            // Rendezés
+            usersQuery = (query.Ordering?.ToLower()) switch
+            {
+                "fullname" => usersQuery.OrderBy(x => x.FullName),
+                "fullname_desc" => usersQuery.OrderByDescending(x => x.FullName),
+                "licenseexpirydate" => usersQuery.OrderBy(x => x.LicenseExpiryDate),
+                "licenseexpirydate_desc" => usersQuery.OrderByDescending(x => x.LicenseExpiryDate),
+                _ => usersQuery.OrderBy(x => x.FullName)
+            };
+
             // Paging
-            var drivers = await usersQuery.OrderBy(x => x.FullName).Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToListAsync();
+            var page = query.Page < 1 ? 1 : query.Page;
+            var pageSize = query.PageSize is < 1 ? 25 : Math.Min(query.PageSize, 200);
+            var drivers = await usersQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
             return Ok(new
             {
                 totalCount,
-                query.Page,
-                query.PageSize,
+                page,
+                pageSize,
                 data = drivers
             });
         }
 
-        [HttpPatch("{id}")]
-        public async Task<IActionResult> DeleteDriver(ulong id)
+        [HttpPatch("deactivate/{id}")]
+        public async Task<IActionResult> DeactivateDriver(ulong id)
         {
             return await this.Run(async () =>
             {
@@ -78,6 +99,7 @@ namespace backend.Controllers
                 _context.Users.Update(driver);
                 if (calendarEvents.Count > 0)
                     _context.CalendarEvents.RemoveRange(calendarEvents);
+                //notificaton
                 if (driver1 != null)
                 {
                     VehicleAssignment? vehicleAssignment = await _context.VehicleAssignments.FirstOrDefaultAsync(x => x.DriverId == driver1.Id && x.AssignedTo == null);
@@ -87,10 +109,11 @@ namespace backend.Controllers
                         _context.VehicleAssignments.Update(vehicleAssignment);
                     }
                 }
+                driver.UpdatedAt = DateTime.UtcNow;
                 int modifiedRows = await _context.SaveChangesAsync();
                 if (modifiedRows == 0)
-                    return StatusCode(500, "Failed to delete driver.");
-                return Ok($"Driver with ID {id} deleted successfully.");
+                    return StatusCode(500, "Failed to deactivate driver.");
+                return Ok($"Driver with ID {id} deactivated successfully.");
             });
         }
 
@@ -99,36 +122,38 @@ namespace backend.Controllers
         {
             return await this.Run(async () =>
             {
+                if (string.IsNullOrWhiteSpace(createDriverDto.FullName) || string.IsNullOrWhiteSpace(createDriverDto.Email) || string.IsNullOrWhiteSpace(createDriverDto.Password) || string.IsNullOrWhiteSpace(createDriverDto.LicenseNumber) || !createDriverDto.LicenseExpiryDate.HasValue || string.IsNullOrWhiteSpace(createDriverDto.Phone))
+                    return BadRequest("FullName, Email, Password, LicenseNumber, LicenseExpiryDate and Phone are required.");
                 if (await _context.Users.AnyAsync(x => x.Email == createDriverDto.Email))
                     return BadRequest("Email already exists.");
+
                 User newUser = new User
                 {
                     FullName = createDriverDto.FullName,
                     Email = createDriverDto.Email,
                     Phone = createDriverDto.Phone,
-                    Role = createDriverDto.Role,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(createDriverDto.Password),
-                    IsActive = true
+                    IsActive = true,
+                    Role = "DRIVER"
                 };
                 _context.Users.Add(newUser);
-                if (newUser.Role == "DRIVER")
+                int createdUser = await _context.SaveChangesAsync();
+                Driver newDriver = new Driver
                 {
-                    Driver newDriver = new Driver
-                    {
-                        UserId = newUser.Id,
-                        LicenseNumber = createDriverDto.LicenseNumber,
-                        LicenseExpiryDate = createDriverDto.LicenseExpiryDate
-                    };
-                    _context.Drivers.Add(newDriver);
-                }
-                int createdRow = await _context.SaveChangesAsync();
-                if (createdRow == 0)
+                    UserId = newUser.Id,
+                    LicenseNumber = createDriverDto.LicenseNumber,
+                    LicenseExpiryDate = createDriverDto.LicenseExpiryDate,
+                    Notes = createDriverDto.Notes
+                };
+                _context.Drivers.Add(newDriver);
+                int createdDriver = await _context.SaveChangesAsync();
+                if (createdUser == 0 || createdDriver == 0)
                     return StatusCode(500, "Failed to create driver.");
                 return StatusCode(201, $"Driver created successfully. Id: {newUser.Id}");
             });
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch("edit/{id}")]
         public async Task<IActionResult> UpdateDriver(ulong id, [FromBody] CreateDriverDto updateDriverDto)
         {
             return await this.Run(async () =>
@@ -137,17 +162,19 @@ namespace backend.Controllers
                 Driver? driver1 = await _context.Drivers.FirstOrDefaultAsync(x => x.UserId == id);
                 if (driver == null || driver.Role != "DRIVER")
                     return NotFound("Driver not found.");
-                driver.FullName = updateDriverDto.FullName;
-                driver.Email = updateDriverDto.Email;
-                driver.Phone = updateDriverDto.Phone;
-                if (!string.IsNullOrWhiteSpace(updateDriverDto.Password))
-                    driver.PasswordHash = BCrypt.Net.BCrypt.HashPassword(updateDriverDto.Password);
-                driver.Role = updateDriverDto.Role;
+                if (!string.IsNullOrWhiteSpace(updateDriverDto.FullName))
+                    driver.FullName = updateDriverDto.FullName;
+                if (!string.IsNullOrWhiteSpace(updateDriverDto.Phone))
+                    driver.Phone = updateDriverDto.Phone; 
                 driver.UpdatedAt = DateTime.UtcNow;
                 if (driver1 != null)
                 {
-                    driver1.LicenseNumber = updateDriverDto.LicenseNumber;
-                    driver1.LicenseExpiryDate = updateDriverDto.LicenseExpiryDate == DateTime.Now ? driver1.LicenseExpiryDate : updateDriverDto.LicenseExpiryDate;
+                    if (!string.IsNullOrWhiteSpace(updateDriverDto.LicenseNumber))
+                        driver1.LicenseNumber = updateDriverDto.LicenseNumber;
+                    if (updateDriverDto.LicenseExpiryDate.HasValue)
+                        driver1.LicenseExpiryDate =updateDriverDto.LicenseExpiryDate;
+                    if (!string.IsNullOrWhiteSpace(updateDriverDto.Notes))
+                        driver1.Notes = updateDriverDto.Notes;
                     _context.Drivers.Update(driver1);
                 }
                 _context.Users.Update(driver);
@@ -155,6 +182,32 @@ namespace backend.Controllers
                 if (updatedRows == 0)
                     return StatusCode(500, "Failed to update driver.");
                 return Ok($"Driver with ID {id} updated successfully.");
+            });
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetDriverById(ulong id)
+        {
+            return await this.Run(async () =>
+            {
+                var driver = await _context.Users.AsNoTracking().Where(x => x.Id == id && x.Role == "DRIVER")
+                    .Join(
+                        _context.Drivers,
+                        user => user.Id,
+                        driver => driver.UserId,
+                        (user, driver) => new UserDto
+                        {
+                            FullName = user.FullName,
+                            Email = user.Email,
+                            Phone = user.Phone,
+                            LicenseNumber = driver.LicenseNumber,
+                            LicenseExpiryDate = driver.LicenseExpiryDate,
+                            IsActive = user.IsActive
+                        }
+                    ).FirstOrDefaultAsync();
+                if (driver == null)
+                    return NotFound("Driver not found.");
+                return Ok(driver);
             });
         }
     }
