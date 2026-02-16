@@ -9,6 +9,6 @@
         public int CurrentMileageKm { get; set; }
         public string? Vin { get; set; }
         public string UserEmail { get; set; } = "";
-        public string Status { get; set; } = "ALL";
+        public string Status { get; set; } = "";
     }
 }
