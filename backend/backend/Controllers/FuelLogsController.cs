@@ -196,7 +196,7 @@ namespace backend.Controllers
                         StoredName = Path.GetFileName(uniqueFileName),
                         MimeType = createFuelLogDto.File.ContentType,
                         SizeBytes = (ulong)createFuelLogDto.File.Length,
-                        StorageProvider = "local",
+                        StorageProvider = "LOCAL"
                     };
                     _context.Files.Add(file);
                     int createdRow = await _context.SaveChangesAsync();
@@ -224,6 +224,26 @@ namespace backend.Controllers
                 if (createdRow1 == 0)
                     return StatusCode(500, "Failed to create fuellog");
                 return StatusCode(201, "Fuellog created");
+            });
+        }
+
+        [HttpGet("fuellogs/receipt/{fileId}")]
+        [Authorize(Roles = "DRIVER,ADMIN")]
+        public async Task<IActionResult> GetFuellogReceipt(ulong fileId)
+        {
+            return await this.Run(async () =>
+            {
+                var file = await _context.Files.FindAsync(fileId);
+                if (file == null)
+                    return NotFound("File not found");
+                var filePath = Path.Combine(_env.ContentRootPath, "Uploads", "Fuellogs", file.StoredName);
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound("File not found on server");
+                var memory = new MemoryStream();
+                using (var stream = new FileStream(filePath, FileMode.Open))
+                    await stream.CopyToAsync(memory);
+                memory.Position = 0;
+                return File(memory, file.MimeType, file.StoredName);
             });
         }
     }
