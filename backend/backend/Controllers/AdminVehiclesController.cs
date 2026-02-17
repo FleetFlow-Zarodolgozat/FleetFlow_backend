@@ -25,16 +25,16 @@ namespace backend.Controllers
             return await this.Run(async () =>
             {
                 var vehiclesQuery = _context.Vehicles.AsNoTracking().Select(v => new VehiclesDto
-                    {
-                        Id = v.Id,
-                        LicensePlate = v.LicensePlate,
-                        BrandModel = v.Brand + " " + v.Model,
-                        Year = v.Year ?? 0,
-                        CurrentMileageKm = v.CurrentMileageKm,
-                        Vin = v.Vin,
-                        Status = v.Status,
-                        UserEmail = v.VehicleAssignments.Where(a => a.AssignedTo == null).Select(a => a.Driver.User.Email).FirstOrDefault()!
-                    });
+                {
+                    Id = v.Id,
+                    LicensePlate = v.LicensePlate,
+                    BrandModel = v.Brand + " " + v.Model,
+                    Year = v.Year ?? 0,
+                    CurrentMileageKm = v.CurrentMileageKm,
+                    Vin = v.Vin,
+                    Status = v.Status,
+                    UserEmail = v.VehicleAssignments.Where(a => a.AssignedTo == null).Select(a => a.Driver.User.Email).FirstOrDefault()!
+                });
                 var q = query.StringQ?.Trim();
                 if (!string.IsNullOrWhiteSpace(q))
                 {
@@ -173,7 +173,7 @@ namespace backend.Controllers
                 if (vehicle == null)
                     return NotFound("Vehicle not found.");
                 if (!string.IsNullOrEmpty(dto.LicensePlate) && vehicle.LicensePlate != dto.LicensePlate && await _context.Vehicles.AnyAsync(x => x.LicensePlate == dto.LicensePlate))
-                    return BadRequest("Vehicle with the same license plate or vin already exists.");
+                    return BadRequest("Vehicle with the same license plate already exists.");
                 if (!string.IsNullOrEmpty(dto.Vin))
                     return BadRequest("Vehicles vin is not editable.");
                 if (dto.CurrentMileageKm != 0 && dto.CurrentMileageKm < vehicle.CurrentMileageKm)
@@ -194,6 +194,24 @@ namespace backend.Controllers
                 if (modifiedRows == 0)
                     return StatusCode(500, "Failed to edit vehicle.");
                 return Ok($"Vehicle with ID {id} edited successfully.");
+            });
+        }
+
+        [HttpPatch("currnt-mileage/{id}")]
+        public async Task<IActionResult> UpdateCurrentMileage(ulong id, [FromBody] string km)
+        {
+            return await this.Run(async () =>
+            {
+                Vehicle? vehicle = await _context.Vehicles.FindAsync(id);
+                if (vehicle == null)
+                    return NotFound("Vehicle not found.");
+                vehicle.CurrentMileageKm = int.Parse(km);
+                vehicle.UpdatedAt = DateTime.UtcNow;
+                _context.Vehicles.Update(vehicle);
+                int modifiedRows = await _context.SaveChangesAsync();
+                if (modifiedRows == 0)
+                    return StatusCode(500, "Failed to update current mileage.");
+                return Ok($"Vehicle with ID {id} current mileage updated successfully.");
             });
         }
     }
