@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS fuel_logs (
   currency CHAR(3) NOT NULL DEFAULT 'HUF',
   station_name VARCHAR(255) NULL,
   location_text VARCHAR(255) NULL,
-  receipt_file_id BIGINT UNSIGNED NOT NULL,
+  receipt_file_id BIGINT UNSIGNED NULL,
   is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -303,6 +303,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     ON DELETE SET NULL
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 
 
