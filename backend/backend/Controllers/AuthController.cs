@@ -27,8 +27,6 @@ namespace backend.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginDto loginDto)
         {
-            if (string.IsNullOrWhiteSpace(loginDto.Email) || string.IsNullOrWhiteSpace(loginDto.Password))
-                return BadRequest(new { message = "Email and password are required" });
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email && u.IsActive == true);
             if (user == null)
                 return Unauthorized(new { message = "Invalid email or password" });
