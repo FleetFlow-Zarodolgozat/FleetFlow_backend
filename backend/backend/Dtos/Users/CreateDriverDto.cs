@@ -10,9 +10,9 @@ namespace backend.Dtos.Users
         public string Email { get; set; } = "";
         [Required, MaxLength(15), Phone]
         public string Phone { get; set; } = "";
-        [MaxLength(200)]
+        [MaxLength(50)]
         public string? Notes { get; set; }
-        [Required, MaxLength(10)]
+        [Required, MaxLength(15)]
         public string LicenseNumber { get; set; } = "";
         [Required]
         public DateTime LicenseExpiryDate { get; set; }

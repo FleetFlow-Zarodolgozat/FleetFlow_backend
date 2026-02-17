@@ -151,8 +151,6 @@ namespace backend.Controllers
         {
             return await this.Run(async () =>
             {
-                if (string.IsNullOrWhiteSpace(createFuelLogDto.Currency) || createFuelLogDto.OdometerKm == 0)
-                    return BadRequest("Currency and odometerKm is required");
                 if (createFuelLogDto.Liters <= 0)
                     return BadRequest("Liters must be greater than 0");
                 if (createFuelLogDto.TotalCost <= 0)
@@ -161,8 +159,6 @@ namespace backend.Controllers
                     return BadRequest("Date cannot be in the future");
                 if (createFuelLogDto.Date < DateTime.UtcNow.AddDays(-7))
                     return BadRequest("Date cannot be older than 7 days");
-                if (createFuelLogDto.File == null)
-                    return BadRequest("Receipt file is required");
                 if (createFuelLogDto.File != null)
                 {
                     var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf" };

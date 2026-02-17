@@ -160,7 +160,7 @@ namespace backend.Controllers
         }
 
         [HttpPatch("edit/{id}")]
-        public async Task<IActionResult> UpdateDriver(ulong id, [FromBody] CreateDriverDto updateDriverDto)
+        public async Task<IActionResult> UpdateDriver(ulong id, [FromBody] UpdateDriverDto updateDriverDto)
         {
             return await this.Run(async () =>
             {
@@ -170,8 +170,6 @@ namespace backend.Controllers
                     return NotFound("Driver not found.");
                 if (updateDriverDto.LicenseExpiryDate.HasValue && updateDriverDto.LicenseExpiryDate <= DateTime.UtcNow)
                     return BadRequest("License expiry date must be in the future.");
-                if (updateDriverDto.Email != null)
-                    return BadRequest("Email cannot be updated.");
                 if (!string.IsNullOrWhiteSpace(updateDriverDto.FullName))
                     driver.FullName = updateDriverDto.FullName;
                 if (!string.IsNullOrWhiteSpace(updateDriverDto.Phone))
