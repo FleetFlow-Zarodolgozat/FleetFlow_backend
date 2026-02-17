@@ -129,9 +129,7 @@ namespace backend.Controllers
         {
             return await this.Run(async () =>
             {
-                if (string.IsNullOrWhiteSpace(createDriverDto.FullName) || string.IsNullOrWhiteSpace(createDriverDto.Email)|| string.IsNullOrWhiteSpace(createDriverDto.LicenseNumber) || !createDriverDto.LicenseExpiryDate.HasValue || string.IsNullOrWhiteSpace(createDriverDto.Phone))
-                    return BadRequest("FullName, Email, LicenseNumber, LicenseExpiryDate and Phone are required.");
-                if (createDriverDto.LicenseExpiryDate.Value <= DateTime.UtcNow)
+                if (createDriverDto.LicenseExpiryDate <= DateTime.UtcNow)
                     return BadRequest("License expiry date must be in the future.");
                 if (await _context.Users.AnyAsync(x => x.Email == createDriverDto.Email))
                     return BadRequest("Email already exists.");
@@ -170,7 +168,7 @@ namespace backend.Controllers
                 Driver? driver1 = await _context.Drivers.FirstOrDefaultAsync(x => x.UserId == id);
                 if (driver == null || driver.Role != "DRIVER")
                     return NotFound("Driver not found.");
-                if (updateDriverDto.LicenseExpiryDate.HasValue && updateDriverDto.LicenseExpiryDate.Value <= DateTime.UtcNow)
+                if (updateDriverDto.LicenseExpiryDate.HasValue && updateDriverDto.LicenseExpiryDate <= DateTime.UtcNow)
                     return BadRequest("License expiry date must be in the future.");
                 if (updateDriverDto.Email != null)
                     return BadRequest("Email cannot be updated.");

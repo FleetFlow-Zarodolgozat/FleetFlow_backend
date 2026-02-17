@@ -159,6 +159,19 @@ namespace backend.Controllers
                     return BadRequest("Total cost must be greater than 0");
                 if (createFuelLogDto.Date > DateTime.UtcNow)
                     return BadRequest("Date cannot be in the future");
+                if (createFuelLogDto.Date < DateTime.UtcNow.AddDays(-7))
+                    return BadRequest("Date cannot be older than 7 days");
+                if (createFuelLogDto.File == null)
+                    return BadRequest("Receipt file is required");
+                if (createFuelLogDto.File != null)
+                {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
+                    var extension = Path.GetExtension(createFuelLogDto.File.FileName).ToLower();
+                    if (!allowedExtensions.Contains(extension))
+                        return BadRequest("Only .jpg, .jpeg, .png, .pdf files are allowed for receipt");
+                    if (createFuelLogDto.File.Length > 5 * 1024 * 1024)
+                        return BadRequest("Receipt file size cannot exceed 5MB");
+                }
                 var user = await _context.Users.FindAsync(userId);
                 if (user == null)
                     return NotFound("User not found");
