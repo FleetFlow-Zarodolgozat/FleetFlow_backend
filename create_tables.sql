@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   license_plate VARCHAR(32) NOT NULL,
   brand VARCHAR(80) NOT NULL,
   model VARCHAR(80) NOT NULL,
-  year INT NULL,
+  year INT NOT NULL,
   vin VARCHAR(64) NOT NULL,
   current_mileage_km INT NOT NULL DEFAULT 0,
   status ENUM('ACTIVE','MAINTENANCE','RETIRED') NOT NULL DEFAULT 'ACTIVE',
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS fuel_logs (
   vehicle_id BIGINT UNSIGNED NOT NULL,
   driver_id BIGINT UNSIGNED NOT NULL,
   date DATETIME NOT NULL,
-  odometer_km INT NULL,
+  odometer_km INT NOT NULL,
   liters DECIMAL(10,2) NOT NULL,
   total_cost DECIMAL(10,2) NOT NULL,
   currency CHAR(3) NOT NULL DEFAULT 'HUF',
@@ -303,5 +303,6 @@ CREATE TABLE IF NOT EXISTS notifications (
     ON DELETE SET NULL
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 
