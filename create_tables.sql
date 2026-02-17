@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('ADMIN','DRIVER') NOT NULL,
   full_name VARCHAR(255) NOT NULL,
-  phone VARCHAR(50) NOT NULL,
+  phone VARCHAR(50) NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS drivers (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,
   license_number VARCHAR(100) NOT NULL,
-  license_expiry_date DATE NOT NULL,
+  license_expiry_date DATE NULL,
   notes TEXT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_drivers_user_id (user_id),
@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS vehicles (
   license_plate VARCHAR(32) NOT NULL,
   brand VARCHAR(80) NOT NULL,
   model VARCHAR(80) NOT NULL,
-  year INT NOT NULL,
-  vin VARCHAR(64) NOT NULL,
+  year INT NULL,
+  vin VARCHAR(64) NULL,
   current_mileage_km INT NOT NULL DEFAULT 0,
   status ENUM('ACTIVE','MAINTENANCE','RETIRED') NOT NULL DEFAULT 'ACTIVE',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS fuel_logs (
   vehicle_id BIGINT UNSIGNED NOT NULL,
   driver_id BIGINT UNSIGNED NOT NULL,
   date DATETIME NOT NULL,
-  odometer_km INT NOT NULL,
+  odometer_km INT NULL,
   liters DECIMAL(10,2) NOT NULL,
   total_cost DECIMAL(10,2) NOT NULL,
   currency CHAR(3) NOT NULL DEFAULT 'HUF',
@@ -142,12 +142,12 @@ CREATE TABLE IF NOT EXISTS trips (
   vehicle_id BIGINT UNSIGNED NOT NULL,
   driver_id BIGINT UNSIGNED NOT NULL,
   start_time DATETIME NOT NULL,
-  end_time DATETIME NOT NULL,
-  start_location VARCHAR(255) NOT NULL,
-  end_location VARCHAR(255) NOT NULL,
-  distance_km DECIMAL(10,2) NOT NULL,
-  start_odometer_km INT NOT NULL,
-  end_odometer_km INT NOT NULL,
+  end_time DATETIME NULL,
+  start_location VARCHAR(255) NULL,
+  end_location VARCHAR(255) NULL,
+  distance_km DECIMAL(10,2) NULL,
+  start_odometer_km INT NULL,
+  end_odometer_km INT NULL,
   purpose VARCHAR(120) NULL,
   notes TEXT NULL,
   is_deleted TINYINT(1) NOT NULL DEFAULT 0,
@@ -303,7 +303,3 @@ CREATE TABLE IF NOT EXISTS notifications (
     ON DELETE SET NULL
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
-
