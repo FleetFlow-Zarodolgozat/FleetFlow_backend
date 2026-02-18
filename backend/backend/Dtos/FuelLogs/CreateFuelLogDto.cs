@@ -13,8 +13,10 @@ namespace backend.Dtos.FuelLogs
         [Required]
         public decimal TotalCost { get; set; }
         [Required, MaxLength(3)]
-        public string Currency { get; set; } = null!;
+        public string Currency { get; set; } = "HUF";
+        [MaxLength(10)]
         public string? StationName { get; set; }
+        [MaxLength(30)]
         public string? LocationText { get; set; }
         [Required]
         public IFormFile File { get; set; } = null!;

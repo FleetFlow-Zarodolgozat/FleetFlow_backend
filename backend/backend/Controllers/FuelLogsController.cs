@@ -83,7 +83,7 @@ namespace backend.Controllers
         {
             return await this.Run(async () =>
             {
-                var fuellogsQuery = _context.FuelLogs.AsNoTracking().Where(x => x.Driver.UserId == userId).Select(v => new FuelLogDto
+                var fuellogsQuery = _context.FuelLogs.AsNoTracking().Where(x => x.Driver.UserId == userId).OrderByDescending(x => x.Date).Select(v => new FuelLogDto
                 {
                     Id = v.Id,
                     Date = v.Date,
@@ -171,10 +171,10 @@ namespace backend.Controllers
                 var user = await _context.Users.FindAsync(userId);
                 if (user == null)
                     return NotFound("User not found");
-                var assigne = await _context.VehicleAssignments.Where(x => x.DriverId == user.Driver!.Id && x.AssignedTo == null).FirstOrDefaultAsync();
-                if (assigne == null)
+                var assignment = await _context.VehicleAssignments.Where(x => x.DriverId == user.Driver!.Id && x.AssignedTo == null).FirstOrDefaultAsync();
+                if (assignment == null)
                     return NotFound("No assigned vehicle found for the driver");
-                var vehicle = await _context.Vehicles.FindAsync(assigne.VehicleId);
+                var vehicle = await _context.Vehicles.FindAsync(assignment.VehicleId);
                 if (vehicle == null)
                     return NotFound("Vehicle not found");
                 if (createFuelLogDto.OdometerKm < vehicle.CurrentMileageKm)
@@ -196,7 +196,7 @@ namespace backend.Controllers
                         StoredName = Path.GetFileName(uniqueFileName),
                         MimeType = createFuelLogDto.File.ContentType,
                         SizeBytes = (ulong)createFuelLogDto.File.Length,
-                        StorageProvider = "local",
+                        StorageProvider = "LOCAL"
                     };
                     _context.Files.Add(file);
                     int createdRow = await _context.SaveChangesAsync();
@@ -215,8 +215,7 @@ namespace backend.Controllers
                     Liters = createFuelLogDto.Liters,
                     StationName = createFuelLogDto.StationName,
                     LocationText = createFuelLogDto.LocationText,
-                    ReceiptFileId = createFuelLogDto.ReceiptFileId,
-                    IsDeleted = false
+                    ReceiptFileId = createFuelLogDto.ReceiptFileId
                 };
                 _context.FuelLogs.Add(fuellog);
                 vehicle.CurrentMileageKm = createFuelLogDto.OdometerKm;
@@ -224,6 +223,26 @@ namespace backend.Controllers
                 if (createdRow1 == 0)
                     return StatusCode(500, "Failed to create fuellog");
                 return StatusCode(201, "Fuellog created");
+            });
+        }
+
+        [HttpGet("fuellogs/receipt/{fileId}")]
+        [Authorize(Roles = "DRIVER,ADMIN")]
+        public async Task<IActionResult> GetFuellogReceipt(ulong fileId)
+        {
+            return await this.Run(async () =>
+            {
+                var file = await _context.Files.FindAsync(fileId);
+                if (file == null)
+                    return NotFound("File not found");
+                var filePath = Path.Combine(_env.ContentRootPath, "Uploads", "Fuellogs", file.StoredName);
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound("File not found on server");
+                var memory = new MemoryStream();
+                using (var stream = new FileStream(filePath, FileMode.Open))
+                    await stream.CopyToAsync(memory);
+                memory.Position = 0;
+                return File(memory, file.MimeType, file.StoredName);
             });
         }
     }

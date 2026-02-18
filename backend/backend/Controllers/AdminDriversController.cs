@@ -45,7 +45,9 @@ namespace backend.Controllers
                         x.FullName.Contains(q) ||
                         x.Email.Contains(q) ||
                         x.LicenseNumber.Contains(q) ||
-                        (x.Phone != null && x.Phone.Contains(q))
+                        (x.Phone != null && x.Phone.Contains(q)) ||
+                        (x.Notes != null && x.Notes.Contains(q)) ||
+                        x.LicenseExpiryDate.ToString()!.Contains(q)
                     );
                 }
                 if (query.IsActiveQ == false)
