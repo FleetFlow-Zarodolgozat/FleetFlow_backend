@@ -173,7 +173,7 @@ namespace backend.Controllers
                 var assignment = await _context.VehicleAssignments.Where(x => x.DriverId == user.Driver!.Id && x.AssignedTo == null).FirstOrDefaultAsync();
                 if (assignment == null)
                     return NotFound("No assigned vehicle found for the driver");
-                var vehicle = await _context.Vehicles.FindAsync(assignment.VehicleId);
+                var vehicle = assignment.Vehicle;
                 if (vehicle == null)
                     return NotFound("Vehicle not found");
                 if (vehicle.CurrentMileageKm < dto.StartOdometerKm)
