@@ -6,11 +6,11 @@ namespace backend.Dtos.Users
     {
         [Required, MaxLength(20)]
         public string FullName { get; set; } = "";
-        [Required, MaxLength(30), EmailAddress]
+        [Required, MaxLength(40), EmailAddress]
         public string Email { get; set; } = "";
         [Required, MaxLength(15), Phone]
         public string Phone { get; set; } = "";
-        [MaxLength(50)]
+        [MaxLength(100)]
         public string? Notes { get; set; }
         [Required, MaxLength(15)]
         public string LicenseNumber { get; set; } = "";

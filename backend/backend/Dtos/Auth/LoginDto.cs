@@ -4,8 +4,8 @@ namespace backend.Dtos.Auth;
 
 public class LoginDto
 {
-    [Required]
+    [Required, MaxLength(40)]
     public string Email { get; set; } = null!;
-    [Required]
+    [Required, MaxLength(20)]
     public string Password { get; set; } = null!;
 }
