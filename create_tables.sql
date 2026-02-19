@@ -13,11 +13,17 @@ CREATE TABLE IF NOT EXISTS users (
   role ENUM('ADMIN','DRIVER') NOT NULL,
   full_name VARCHAR(255) NOT NULL,
   phone VARCHAR(50) NULL,
+  profile_img_file_id BIGINT UNSIGNED NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_users_email (email)
+  UNIQUE KEY uq_users_email (email),
+  KEY ix_users_profile_img (profile_img_file_id),
+  CONSTRAINT fk_users_profile_img
+    FOREIGN KEY (profile_img_file_id) REFERENCES files(id)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -------------------------
@@ -116,6 +122,7 @@ CREATE TABLE IF NOT EXISTS fuel_logs (
   receipt_file_id BIGINT UNSIGNED NULL,
   is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY ix_fuel_vehicle_date (vehicle_id, date),
   KEY ix_fuel_driver_date (driver_id, date),
@@ -151,6 +158,7 @@ CREATE TABLE IF NOT EXISTS trips (
   notes TEXT NULL,
   is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY ix_trips_vehicle_start (vehicle_id, start_time),
   KEY ix_trips_driver_start (driver_id, start_time),
@@ -302,4 +310,3 @@ CREATE TABLE IF NOT EXISTS notifications (
     ON DELETE SET NULL
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
