@@ -2,6 +2,7 @@
 using backend.Dtos.Users;
 using backend.Dtos.Vehicles;
 using backend.Models;
+using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,9 +16,11 @@ namespace backend.Controllers
     public class AdminVehiclesAssignmentController : ControllerBase
     {
         private readonly FlottakezeloDbContext _context;
-        public AdminVehiclesAssignmentController(FlottakezeloDbContext context)
+        private readonly INotificationService _notificationService;
+        public AdminVehiclesAssignmentController(FlottakezeloDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         [HttpGet("assign/driver/{userId}")]
@@ -122,6 +125,12 @@ namespace backend.Controllers
                     AssignedFrom = DateTime.UtcNow
                 };
                 _context.VehicleAssignments.Add(assignment);
+                await _notificationService.CreateAsync(
+                    userId,
+                    "ASSIGNMENT",
+                    "New vehicle assigned",
+                    $"You have been assigned vehicle {vehicle.LicensePlate}"
+                );
                 int createdRows = await _context.SaveChangesAsync();
                 if (createdRows == 0)
                     return StatusCode(500, "Failed to assign vehicle.");

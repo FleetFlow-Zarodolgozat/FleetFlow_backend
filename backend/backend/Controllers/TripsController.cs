@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api")]
     [ApiController]
     public class TripsController : ControllerBase
     {
@@ -44,11 +44,11 @@ namespace backend.Controllers
                     tripsQuery = tripsQuery.Where(x =>
                         x.LicensePlate.Contains(q) ||
                         x.UserEmail.Contains(q) ||
-                        x.StartLocation.Contains(q) ||
-                        x.EndLocation.Contains(q) ||
+                        x.StartLocation!.Contains(q) ||
+                        x.EndLocation!.Contains(q) ||
                         (x.Notes != null && x.Notes.Contains(q)) ||
-                        x.DistanceKm.ToString().Contains(q) ||
-                        x.Long.ToString().Contains(q) ||
+                        x.DistanceKm.ToString()!.Contains(q) ||
+                        x.Long.ToString()!.Contains(q) ||
                         x.StartTime.ToString().Contains(q)
                     );
                 }
@@ -149,7 +149,7 @@ namespace backend.Controllers
             });
         }
 
-        [HttpPatch("fuellogs/{id}/delete")]
+        [HttpPatch("trips/{id}/delete")]
         [Authorize(Roles = "DRIVER")]
         public async Task<IActionResult> DeleteTripForUser(ulong id)
         {
