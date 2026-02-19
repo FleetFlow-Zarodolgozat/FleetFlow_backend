@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api")]
     [ApiController]
     public class OwnDataController : ControllerBase
     {
@@ -34,12 +34,12 @@ namespace backend.Controllers
                     return NotFound("User not found");
                 if (user.Role == "ADMIN")
                 {
-                    return Ok(new
+                    return Ok(new UserDto
                     {
-                        user.FullName,
-                        user.Email,
-                        user.Phone,
-                        user.ProfileImgFileId
+                        FullName = user.FullName,
+                        Email = user.Email,
+                        Phone = user.Phone,
+                        ProfileImgFileId = user.ProfileImgFileId
                     });
                 }
                 else

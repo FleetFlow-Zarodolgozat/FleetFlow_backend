@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api")]
     [ApiController]
     public class TripsController : ControllerBase
     {
@@ -149,7 +149,7 @@ namespace backend.Controllers
             });
         }
 
-        [HttpPatch("fuellogs/{id}/delete")]
+        [HttpPatch("trips/{id}/delete")]
         [Authorize(Roles = "DRIVER")]
         public async Task<IActionResult> DeleteTripForUser(ulong id)
         {

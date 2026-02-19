@@ -1,4 +1,5 @@
-﻿using backend.Services.Interfaces;
+﻿using backend.Dtos.Notifications;
+using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +28,6 @@ namespace backend.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> Create(CreateNotificationDto dto)
         {
             await _notificationService.CreateAsync(
@@ -36,15 +36,14 @@ namespace backend.Controllers
                 dto.Title,
                 dto.Message,
                 dto.RelatedServiceRequestId);
-
             return Ok();
         }
 
-        [HttpPatch("read/{id}")]
-        public async Task<IActionResult> MarkRead(ulong id)
+        [HttpPatch("read")]
+        public async Task<IActionResult> MarkRead()
         {
             var userId = ulong.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            await _notificationService.MarkAsReadAsync(id, userId);
+            await _notificationService.MarkAsReadAsync(userId);
             return NoContent();
         }
 
@@ -54,6 +53,14 @@ namespace backend.Controllers
             var userId = ulong.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             await _notificationService.DeleteAsync(id, userId);
             return NoContent();
+        }
+
+        [HttpGet("unread-status")]
+        public async Task<IActionResult> HasUnread()
+        {
+            var userId = ulong.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var has = await _notificationService.HasUnreadNotifications(userId);
+            return Ok(has);
         }
     }
 }

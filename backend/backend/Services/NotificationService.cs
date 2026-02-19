@@ -25,7 +25,6 @@ namespace backend.Services
                 IsRead = false
             };
             _context.Notifications.Add(notification);
-            await _context.SaveChangesAsync();
         }
 
         public async Task<List<Notification>> GetUserNotificationsAsync(ulong userId)
@@ -33,12 +32,13 @@ namespace backend.Services
             return await _context.Notifications.Where(n => n.UserId == userId).OrderByDescending(n => n.CreatedAt).ToListAsync();
         }
 
-        public async Task MarkAsReadAsync(ulong notificationId, ulong userId)
+        public async Task MarkAsReadAsync(ulong userId)
         {
-            var notif = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
-            if (notif == null)
-                throw new Exception("Notification not found");
-            notif.IsRead = true;
+            var notifications = await _context.Notifications.Where(n => n.UserId == userId).ToListAsync();
+            foreach (var notif in notifications)
+            {
+                notif.IsRead = true;
+            }
             await _context.SaveChangesAsync();
         }
 
@@ -49,6 +49,11 @@ namespace backend.Services
                 throw new Exception("Notification not found");
             _context.Notifications.Remove(notif);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> HasUnreadNotifications(ulong userId)
+        {
+            return await _context.Notifications.AnyAsync(n => n.UserId == userId && !n.IsRead);
         }
     }
 }
