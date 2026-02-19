@@ -1,4 +1,5 @@
 ﻿using backend.Dtos.Assignments;
+using backend.Dtos.Users;
 using backend.Dtos.Vehicles;
 using backend.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -29,7 +30,7 @@ namespace backend.Controllers
             if (assignment == null)
             {
                 var freeVehicles = await _context.Vehicles.Where(v => v.Status == "ACTIVE" && !_context.VehicleAssignments.Any(a => a.VehicleId == v.Id && a.AssignedTo == null))
-                    .Select(v => new SimpleVehicleDto
+                    .Select(v => new VehiclesDto
                     {
                         Id = v.Id,
                         LicensePlate = v.LicensePlate
@@ -43,12 +44,11 @@ namespace backend.Controllers
             return Ok(new AssignedToDto
             {
                 IsAssigned = true,
-                AssignedVehicle = new SimpleVehicleDto
+                AssignedVehicle = new VehiclesDto
                 {
                     Id = assignment.Vehicle.Id,
                     LicensePlate = assignment.Vehicle.LicensePlate,
-                    Brand = assignment.Vehicle.Brand,
-                    Model = assignment.Vehicle.Model,
+                    BrandModel = assignment.Vehicle.Brand + " " + assignment.Vehicle.Model,
                     Vin = assignment.Vehicle.Vin,
                     Status = assignment.Vehicle.Status,
                     Year = assignment.Vehicle.Year ?? 0,
@@ -67,7 +67,7 @@ namespace backend.Controllers
             if (assignment == null)
             {
                 var freeDrivers = await _context.Drivers.Include(d => d.User).Where(d => d.User.IsActive == true && d.User.Role != "ADMIN" && !_context.VehicleAssignments.Any(a => a.DriverId == d.Id && a.AssignedTo == null))
-                    .Select(d => new SimpleDriverDto
+                    .Select(d => new UserDto
                     {
                         Id = d.User.Id,
                         Email = d.User.Email
@@ -81,7 +81,7 @@ namespace backend.Controllers
             return Ok(new AssignedToDto
             {
                 IsAssigned = true,
-                AssignedDriver = new SimpleDriverDto
+                AssignedDriver = new UserDto
                 {
                     Id = assignment.Driver.User.Id,
                     FullName = assignment.Driver.User.FullName,

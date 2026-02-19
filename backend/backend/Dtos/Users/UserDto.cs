@@ -2,7 +2,7 @@
 {
     public class UserDto
     {
-        public ulong Id { get; set; }
+        public ulong Id { get; set; } = 0;
         public string FullName { get; set; } = "";
         public string Email { get; set; } = "";
         public string? Phone { get; set; } = "";

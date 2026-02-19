@@ -31,7 +31,7 @@ namespace backend.Controllers
                 {
                     Id = v.Id,
                     Date = v.Date,
-                    TotalCostCur = v.TotalCost.ToString() + "" + v.Currency,
+                    TotalCostCur = v.TotalCost.ToString() + " Ft",
                     Liters = v.Liters,
                     StationName = v.StationName,
                     ReceiptFileId = v.ReceiptFileId,
@@ -145,6 +145,23 @@ namespace backend.Controllers
             });
         }
 
+        [HttpPatch("fuellogs/{id}/restore")]
+        [Authorize(Roles = "ADMIN")]
+        public async Task<IActionResult> RestoreFuellog(ulong id)
+        {
+            return await this.Run(async () =>
+            {
+                var fuellog = await _context.FuelLogs.FindAsync(id);
+                if (fuellog == null)
+                    return NotFound("Fuellog not found");
+                fuellog.IsDeleted = false;
+                int modifiedRow = await _context.SaveChangesAsync();
+                if (modifiedRow == 0)
+                    return StatusCode(500, "Failed to rstore fuellog");
+                return Ok("Fuellog restored");
+            });
+        }
+
         [HttpPost("fuellogs")]
         [Authorize(Roles = "DRIVER")]
         public async Task<IActionResult> CreateFuellog(CreateFuelLogDto createFuelLogDto, ulong userId)
@@ -174,7 +191,7 @@ namespace backend.Controllers
                 var assignment = await _context.VehicleAssignments.Where(x => x.DriverId == user.Driver!.Id && x.AssignedTo == null).FirstOrDefaultAsync();
                 if (assignment == null)
                     return NotFound("No assigned vehicle found for the driver");
-                var vehicle = await _context.Vehicles.FindAsync(assignment.VehicleId);
+                var vehicle = assignment.Vehicle;
                 if (vehicle == null)
                     return NotFound("Vehicle not found");
                 if (createFuelLogDto.OdometerKm < vehicle.CurrentMileageKm)

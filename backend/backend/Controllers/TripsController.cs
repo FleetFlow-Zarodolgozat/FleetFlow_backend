@@ -130,6 +130,23 @@ namespace backend.Controllers
             });
         }
 
+        [HttpPatch("admin/trips/{id}/restore")]
+        [Authorize(Roles = "ADMIN")]
+        public async Task<IActionResult> RestoreTrip(ulong id)
+        {
+            return await this.Run(async () =>
+            {
+                var trip = await _context.Trips.FindAsync(id);
+                if (trip == null)
+                    return NotFound("Trip not found");
+                trip.IsDeleted = false;
+                int modifiedRow = await _context.SaveChangesAsync();
+                if (modifiedRow == 0)
+                    return StatusCode(500, "Failed to restore trip");
+                return Ok("Trip restored");
+            });
+        }
+
         [HttpPatch("fuellogs/{id}/delete")]
         [Authorize(Roles = "DRIVER")]
         public async Task<IActionResult> DeleteTripForUser(ulong id)
@@ -173,7 +190,7 @@ namespace backend.Controllers
                 var assignment = await _context.VehicleAssignments.Where(x => x.DriverId == user.Driver!.Id && x.AssignedTo == null).FirstOrDefaultAsync();
                 if (assignment == null)
                     return NotFound("No assigned vehicle found for the driver");
-                var vehicle = await _context.Vehicles.FindAsync(assignment.VehicleId);
+                var vehicle = assignment.Vehicle;
                 if (vehicle == null)
                     return NotFound("Vehicle not found");
                 if (vehicle.CurrentMileageKm < dto.StartOdometerKm)
