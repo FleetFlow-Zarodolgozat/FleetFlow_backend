@@ -85,10 +85,6 @@ public partial class FlottakezeloDbContext : DbContext
             entity.Property(e => e.StartAt)
                 .HasColumnType("datetime")
                 .HasColumnName("start_at");
-            entity.Property(e => e.Status)
-                .HasDefaultValueSql("'''PLANNED'''")
-                .HasColumnType("enum('PLANNED','DONE','CANCELLED')")
-                .HasColumnName("status");
             entity.Property(e => e.Title)
                 .HasMaxLength(160)
                 .HasColumnName("title");
@@ -204,11 +200,6 @@ public partial class FlottakezeloDbContext : DbContext
                 .HasDefaultValueSql("'current_timestamp()'")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
-            entity.Property(e => e.Currency)
-                .HasMaxLength(3)
-                .HasDefaultValueSql("'''HUF'''")
-                .IsFixedLength()
-                .HasColumnName("currency");
             entity.Property(e => e.Date)
                 .HasColumnType("datetime")
                 .HasColumnName("date");

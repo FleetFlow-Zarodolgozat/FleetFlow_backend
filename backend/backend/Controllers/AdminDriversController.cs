@@ -27,18 +27,17 @@ namespace backend.Controllers
             return await this.Run(async () =>
             {
                 var usersQuery = _context.Users.AsNoTracking().Include(x => x.Driver).Where(x => x.Role == "DRIVER").Select(d => new UserDto
-                    {
-                        FullName = d.FullName,
-                        Email = d.Email,
-                        Phone = d.Phone,
-                        LicenseNumber = d.Driver!.LicenseNumber,
-                        LicenseExpiryDate = d.Driver.LicenseExpiryDate,
-                        IsActive = d.IsActive,
-                        Notes = d.Driver.Notes,
-                        Id = d.Id,
-                        ProfileImgFileId = d.ProfileImgFileId
-                }
-                );
+                {
+                    FullName = d.FullName,
+                    Email = d.Email,
+                    Phone = d.Phone,
+                    LicenseNumber = d.Driver!.LicenseNumber,
+                    LicenseExpiryDate = d.Driver.LicenseExpiryDate,
+                    IsActive = d.IsActive,
+                    Notes = d.Driver.Notes,
+                    Id = d.Id,
+                    ProfileImgFileId = d.ProfileImgFileId
+                });
                 var q = query.StringQ?.Trim();
                 if (!string.IsNullOrWhiteSpace(q))
                 {

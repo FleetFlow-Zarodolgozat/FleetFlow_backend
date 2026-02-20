@@ -19,8 +19,6 @@ public partial class FuelLog
 
     public decimal TotalCost { get; set; }
 
-    public string Currency { get; set; } = null!;
-
     public string? StationName { get; set; }
 
     public string? LocationText { get; set; }
