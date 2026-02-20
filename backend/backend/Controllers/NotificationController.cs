@@ -22,7 +22,10 @@ namespace backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetMine()
         {
-            var userId = ulong.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null)
+                return Unauthorized();
+            ulong userId = ulong.Parse(userIdClaim);
             var list = await _notificationService.GetUserNotificationsAsync(userId);
             return Ok(list);
         }
@@ -36,13 +39,16 @@ namespace backend.Controllers
                 dto.Title,
                 dto.Message,
                 dto.RelatedServiceRequestId);
-            return Ok();
+            return Created();
         }
 
         [HttpPatch("read")]
         public async Task<IActionResult> MarkRead()
         {
-            var userId = ulong.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null)
+                return Unauthorized();
+            ulong userId = ulong.Parse(userIdClaim);
             await _notificationService.MarkAsReadAsync(userId);
             return NoContent();
         }
@@ -50,7 +56,10 @@ namespace backend.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(ulong id)
         {
-            var userId = ulong.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null)
+                return Unauthorized();
+            ulong userId = ulong.Parse(userIdClaim);
             await _notificationService.DeleteAsync(id, userId);
             return NoContent();
         }
@@ -58,7 +67,10 @@ namespace backend.Controllers
         [HttpGet("unread-status")]
         public async Task<IActionResult> HasUnread()
         {
-            var userId = ulong.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null)
+                return Unauthorized();
+            ulong userId = ulong.Parse(userIdClaim);
             var has = await _notificationService.HasUnreadNotifications(userId);
             return Ok(has);
         }

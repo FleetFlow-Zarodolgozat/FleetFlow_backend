@@ -33,7 +33,8 @@ namespace backend.Controllers
                     CurrentMileageKm = v.CurrentMileageKm,
                     Vin = v.Vin,
                     Status = v.Status,
-                    UserEmail = v.VehicleAssignments.Where(a => a.AssignedTo == null).Select(a => a.Driver.User.Email).FirstOrDefault()!
+                    UserEmail = v.VehicleAssignments.Where(a => a.AssignedTo == null).Select(a => a.Driver.User.Email).FirstOrDefault()!,
+                    ProfileImgFileId = v.VehicleAssignments.Where(a => a.AssignedTo == null).Select(a => a.Driver.User.ProfileImgFileId).FirstOrDefault()
                 });
                 var q = query.StringQ?.Trim();
                 if (!string.IsNullOrWhiteSpace(q))

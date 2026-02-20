@@ -4,6 +4,7 @@
     {
         public ulong Id { get; set; }
         public string UserEmail { get; set; } = "";
+        public ulong? ProfileImgFileId { get; set; }
         public string LicensePlate { get; set; } = "";
         public bool IsDeleted { get; set; }
         public DateTime StartTime { get; set; }

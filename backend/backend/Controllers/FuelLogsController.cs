@@ -1,16 +1,17 @@
 ﻿using backend.Dtos;
 using backend.Dtos.FuelLogs;
 using backend.Dtos.Vehicles;
+using backend.Models;
+using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using backend.Models;
-using backend.Services.Interfaces;
+using System.Security.Claims;
 
 namespace backend.Controllers
 {
-    [Route("api")]
+    [Route("api/fuellogs")]
     [ApiController]
     public class FuelLogsController : ControllerBase
     {
@@ -22,7 +23,7 @@ namespace backend.Controllers
             _fileService = fileService;
         }
 
-        [HttpGet("admin/fuellogs")]
+        [HttpGet("admin")]
         [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> GetFuellogs([FromQuery] Querry query)
         {
@@ -38,7 +39,8 @@ namespace backend.Controllers
                     ReceiptFileId = v.ReceiptFileId,
                     UserEmail = v.Driver.User.Email,
                     LicensePlate = v.Vehicle.LicensePlate,
-                    IsDeleted = v.IsDeleted
+                    IsDeleted = v.IsDeleted,
+                    ProfileImgFileId = v.Driver.User.ProfileImgFileId
                 });
                 var q = query.StringQ?.Trim();
                 if (!string.IsNullOrWhiteSpace(q))
@@ -78,17 +80,21 @@ namespace backend.Controllers
             });
         }
 
-        [HttpGet("fuellogs/{userId}")]
+        [HttpGet("mine")]
         [Authorize(Roles = "DRIVER")]
-        public async Task<IActionResult> GetFuellogsForUser(ulong userId, [FromQuery] Querry query)
+        public async Task<IActionResult> GetFuellogsForUser([FromQuery] Querry query)
         {
             return await this.Run(async () =>
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
                 var fuellogsQuery = _context.FuelLogs.AsNoTracking().Where(x => x.Driver.UserId == userId).OrderByDescending(x => x.Date).Select(v => new FuelLogDto
                 {
                     Id = v.Id,
                     Date = v.Date,
-                    TotalCostCur = v.TotalCost.ToString() + "" + v.Currency,
+                    TotalCostCur = v.TotalCost.ToString() + " Ft",
                     Liters = v.Liters,
                     StationName = v.StationName,
                     ReceiptFileId = v.ReceiptFileId,
@@ -110,34 +116,23 @@ namespace backend.Controllers
             });
         }
 
-        [HttpPatch("admin/fuellogs/{id}/delete")]
-        [Authorize(Roles = "ADMIN")]
+        [HttpPatch("delete/{id}")]
+        [Authorize(Roles = "ADMIN,DRIVER")]
         public async Task<IActionResult> DeleteFuellog(ulong id)
         {
             return await this.Run(async () =>
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null)
+                    return NotFound("User not found");
                 var fuellog = await _context.FuelLogs.FindAsync(id);
                 if (fuellog == null)
                     return NotFound("Fuellog not found");
-                fuellog.IsDeleted = true;
-                fuellog.UpdatedAt = DateTime.UtcNow;
-                int modifiedRow = await _context.SaveChangesAsync();
-                if (modifiedRow == 0)
-                    return StatusCode(500, "Failed to delete fuellog");
-                return Ok("Fuellog deleted");
-            });
-        }
-
-        [HttpPatch("fuellogs/{id}/delete")]
-        [Authorize(Roles = "DRIVER")]
-        public async Task<IActionResult> DeleteFuellogForUser(ulong id)
-        {
-            return await this.Run(async () =>
-            {
-                var fuellog = await _context.FuelLogs.FindAsync(id);
-                if (fuellog == null)
-                    return NotFound("Fuellog not found");
-                if (fuellog.CreatedAt.AddHours(24) < DateTime.UtcNow)
+                if (user.Role == "DRIVER" && fuellog.CreatedAt.AddHours(24) < DateTime.UtcNow)
                     return StatusCode(500, "Only fuellogs created within the last 24 hours can be deleted");
                 fuellog.IsDeleted = true;
                 fuellog.UpdatedAt = DateTime.UtcNow;
@@ -148,7 +143,7 @@ namespace backend.Controllers
             });
         }
 
-        [HttpPatch("fuellogs/{id}/restore")]
+        [HttpPatch("restore/{id}")]
         [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> RestoreFuellog(ulong id)
         {
@@ -166,12 +161,16 @@ namespace backend.Controllers
             });
         }
 
-        [HttpPost("fuellogs")]
+        [HttpPost]
         [Authorize(Roles = "DRIVER")]
-        public async Task<IActionResult> CreateFuellog(CreateFuelLogDto createFuelLogDto, ulong userId)
+        public async Task<IActionResult> CreateFuellog(CreateFuelLogDto createFuelLogDto)
         {
             return await this.Run(async () =>
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
                 if (createFuelLogDto.Liters <= 0)
                     return BadRequest("Liters must be greater than 0");
                 if (createFuelLogDto.TotalCost <= 0)

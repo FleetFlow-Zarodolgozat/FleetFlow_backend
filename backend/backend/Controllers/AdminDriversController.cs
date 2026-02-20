@@ -35,8 +35,9 @@ namespace backend.Controllers
                         LicenseExpiryDate = d.Driver.LicenseExpiryDate,
                         IsActive = d.IsActive,
                         Notes = d.Driver.Notes,
-                        Id = d.Id
-                    }
+                        Id = d.Id,
+                        ProfileImgFileId = d.ProfileImgFileId
+                }
                 );
                 var q = query.StringQ?.Trim();
                 if (!string.IsNullOrWhiteSpace(q))
