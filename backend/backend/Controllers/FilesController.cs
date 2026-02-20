@@ -39,7 +39,7 @@ namespace backend.Controllers
                 return Unauthorized();
             ulong userId = ulong.Parse(userIdClaim);
             var id = await _fileService.SaveFileAsync(file, folder, userId);
-            return Ok(id);
+            return StatusCode(201, id);
         }
 
         [HttpGet("{id}")]

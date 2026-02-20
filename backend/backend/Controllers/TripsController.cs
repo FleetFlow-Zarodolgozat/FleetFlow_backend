@@ -6,10 +6,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace backend.Controllers
 {
-    [Route("api")]
+    [Route("api/trips")]
     [ApiController]
     public class TripsController : ControllerBase
     {
@@ -19,7 +20,7 @@ namespace backend.Controllers
             _context = context;
         }
 
-        [HttpGet("admin/trips")]
+        [HttpGet("admin")]
         [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> GetTrips([FromQuery] Querry query)
         {
@@ -36,7 +37,8 @@ namespace backend.Controllers
                     StartLocation = v.StartLocation,
                     EndLocation = v.EndLocation,
                     DistanceKm = v.DistanceKm,
-                    Notes = v.Notes
+                    Notes = v.Notes,
+                    ProfileImgFileId = v.Driver.User.ProfileImgFileId
                 });
                 var q = query.StringQ?.Trim();
                 if (!string.IsNullOrWhiteSpace(q))
@@ -80,12 +82,16 @@ namespace backend.Controllers
             });
         }
 
-        [HttpGet("trips/{userId}")]
+        [HttpGet("mine")]
         [Authorize(Roles = "DRIVER")]
-        public async Task<IActionResult> GetTripsForUser(ulong userId, [FromQuery] Querry query)
+        public async Task<IActionResult> GetTripsForUser([FromQuery] Querry query)
         {
             return await this.Run(async () =>
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
                 var tripsQuery = _context.Trips.AsNoTracking().Where(x => x.Driver.UserId == userId).OrderByDescending(x => x.StartTime).Select(v => new TripDto
                 {
                     Id = v.Id,
@@ -113,15 +119,24 @@ namespace backend.Controllers
             });
         }
 
-        [HttpPatch("admin/trips/{id}/delete")]
-        [Authorize(Roles = "ADMIN")]
+        [HttpPatch("delete/{id}")]
+        [Authorize(Roles = "ADMIN,DRIVER")]
         public async Task<IActionResult> DeleteTrip(ulong id)
         {
             return await this.Run(async () =>
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null)
+                    return NotFound("User not found");
                 var trip = await _context.Trips.FindAsync(id);
                 if (trip == null)
                     return NotFound("Trip not found");
+                if (user.Role == "DRIVER" && trip.CreatedAt.AddHours(24) < DateTime.UtcNow)
+                    return StatusCode(500, "Only trips created within the last 24 hours can be deleted");
                 trip.IsDeleted = true;
                 trip.UpdatedAt = DateTime.UtcNow;
                 int modifiedRow = await _context.SaveChangesAsync();
@@ -131,7 +146,7 @@ namespace backend.Controllers
             });
         }
 
-        [HttpPatch("admin/trips/{id}/restore")]
+        [HttpPatch("restore/{id}")]
         [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> RestoreTrip(ulong id)
         {
@@ -149,32 +164,16 @@ namespace backend.Controllers
             });
         }
 
-        [HttpPatch("trips/{id}/delete")]
+        [HttpPost]
         [Authorize(Roles = "DRIVER")]
-        public async Task<IActionResult> DeleteTripForUser(ulong id)
+        public async Task<IActionResult> CreateTrip(CreateTripDto dto)
         {
             return await this.Run(async () =>
             {
-                var trip = await _context.Trips.FindAsync(id);
-                if (trip == null)
-                    return NotFound("Trip not found");
-                if (trip.CreatedAt.AddHours(24) < DateTime.UtcNow)
-                    return StatusCode(500, "Only trips created within the last 24 hours can be deleted");
-                trip.IsDeleted = true;
-                trip.UpdatedAt = DateTime.UtcNow;
-                int modifiedRow = await _context.SaveChangesAsync();
-                if (modifiedRow == 0)
-                    return StatusCode(500, "Failed to delete trip");
-                return Ok("Trip deleted");
-            });
-        }
-
-        [HttpPost("trips")]
-        [Authorize(Roles = "DRIVER")]
-        public async Task<IActionResult> CreateTrip(CreateTripDto dto, ulong userId)
-        {
-            return await this.Run(async () =>
-            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
                 if (dto.EndTime < dto.StartTime)
                     return BadRequest("End time cannot be before start time");
                 if (dto.StartTime > DateTime.UtcNow)

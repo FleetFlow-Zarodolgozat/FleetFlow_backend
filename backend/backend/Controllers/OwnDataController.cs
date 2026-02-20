@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace backend.Controllers
 {
@@ -23,13 +24,17 @@ namespace backend.Controllers
             _fileService = fileService;
         }
 
-        [HttpGet("profile/{id}")]
+        [HttpGet("profile/mine")]
         [Authorize(Roles = "DRIVER,ADMIN")]
-        public async Task<IActionResult> GetOwnProfile(ulong id)
+        public async Task<IActionResult> GetOwnProfile()
         {
             return await this.Run(async () =>
             {
-                var user = await _context.Users.FindAsync(id);
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
+                var user = await _context.Users.FindAsync(userId);
                 if (user == null)
                     return NotFound("User not found");
                 if (user.Role == "ADMIN")
@@ -57,12 +62,16 @@ namespace backend.Controllers
             });
         }
 
-        [HttpGet("assigned-vehicle/{userId}")]
+        [HttpGet("assigned-vehicle")]
         [Authorize(Roles = "DRIVER")]
-        public async Task<IActionResult> GetAssignedVehicle(ulong userId)
+        public async Task<IActionResult> GetAssignedVehicle()
         {
             return await this.Run(async () =>
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
                 var user = await _context.Users.FindAsync(userId);
                 if (user == null)
                     return NotFound("User not found");
@@ -82,13 +91,17 @@ namespace backend.Controllers
             });
         }
 
-        [HttpPatch("edit-profile/{id}")]
+        [HttpPatch("profile/edit")]
         [Authorize(Roles = "DRIVER,ADMIN")]
-        public async Task<IActionResult> EditOwnProfile(ulong id, [FromBody] EditProfileDto dto)
+        public async Task<IActionResult> EditOwnProfile([FromBody] EditProfileDto dto)
         {
             return await this.Run(async () =>
             {
-                var user = await _context.Users.FindAsync(id);
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
+                var user = await _context.Users.FindAsync(userId);
                 if (user == null)
                     return NotFound("User not found");
                 if (!string.IsNullOrEmpty(dto.FullName))
@@ -105,7 +118,7 @@ namespace backend.Controllers
                 {
                     if (user.ProfileImgFileId != null)
                         await _fileService.DeleteFileAsync(user.ProfileImgFileId.Value);
-                    var newId = await _fileService.SaveFileAsync(dto.File!, "profiles", id);
+                    var newId = await _fileService.SaveFileAsync(dto.File!, "profiles", userId);
                     user.ProfileImgFileId = newId;
                 }
                 int modifiedRows = await _context.SaveChangesAsync();

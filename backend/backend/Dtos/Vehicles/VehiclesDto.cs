@@ -9,6 +9,7 @@
         public int CurrentMileageKm { get; set; } = 0;
         public string? Vin { get; set; }
         public string UserEmail { get; set; } = "";
+        public ulong? ProfileImgFileId { get; set; }
         public string Status { get; set; } = "";
     }
 }
