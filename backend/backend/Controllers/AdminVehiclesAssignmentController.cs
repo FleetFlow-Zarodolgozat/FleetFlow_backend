@@ -24,76 +24,82 @@ namespace backend.Controllers
         }
 
         [HttpGet("assign/driver/{userId}")]
-        public async Task<ActionResult<AssignedToDto>> IsAssignedDriver(ulong userId)
+        public async Task<IActionResult> IsAssignedDriver(ulong userId)
         {
-            var driver = await _context.Drivers.Include(d => d.User).FirstOrDefaultAsync(x => x.UserId == userId);
-            if (driver == null || driver.User.Role == "ADMIN")
-                return NotFound("Driver not found.");
-            var assignment = await _context.VehicleAssignments.Include(a => a.Vehicle).Where(a => a.DriverId == driver.Id && a.AssignedTo == null).FirstOrDefaultAsync();
-            if (assignment == null)
+            return await this.Run(async () =>
             {
-                var freeVehicles = await _context.Vehicles.Where(v => v.Status == "ACTIVE" && !_context.VehicleAssignments.Any(a => a.VehicleId == v.Id && a.AssignedTo == null))
-                    .Select(v => new VehiclesDto
+                var driver = await _context.Drivers.Include(d => d.User).FirstOrDefaultAsync(x => x.UserId == userId);
+                if (driver == null || driver.User.Role == "ADMIN")
+                    return NotFound("Driver not found.");
+                var assignment = await _context.VehicleAssignments.Include(a => a.Vehicle).Where(a => a.DriverId == driver.Id && a.AssignedTo == null).FirstOrDefaultAsync();
+                if (assignment == null)
+                {
+                    var freeVehicles = await _context.Vehicles.Where(v => v.Status == "ACTIVE" && !_context.VehicleAssignments.Any(a => a.VehicleId == v.Id && a.AssignedTo == null))
+                        .Select(v => new VehiclesDto
+                        {
+                            Id = v.Id,
+                            LicensePlate = v.LicensePlate
+                        }).ToListAsync();
+                    return Ok(new AssignedToDto
                     {
-                        Id = v.Id,
-                        LicensePlate = v.LicensePlate
-                    }).ToListAsync();
+                        IsAssigned = false,
+                        FreeVehicles = freeVehicles
+                    });
+                }
                 return Ok(new AssignedToDto
                 {
-                    IsAssigned = false,
-                    FreeVehicles = freeVehicles
+                    IsAssigned = true,
+                    AssignedVehicle = new VehiclesDto
+                    {
+                        Id = assignment.Vehicle.Id,
+                        LicensePlate = assignment.Vehicle.LicensePlate,
+                        BrandModel = assignment.Vehicle.Brand + " " + assignment.Vehicle.Model,
+                        Vin = assignment.Vehicle.Vin,
+                        Status = assignment.Vehicle.Status,
+                        Year = assignment.Vehicle.Year ?? 0,
+                        CurrentMileageKm = assignment.Vehicle.CurrentMileageKm
+                    }
                 });
-            }
-            return Ok(new AssignedToDto
-            {
-                IsAssigned = true,
-                AssignedVehicle = new VehiclesDto
-                {
-                    Id = assignment.Vehicle.Id,
-                    LicensePlate = assignment.Vehicle.LicensePlate,
-                    BrandModel = assignment.Vehicle.Brand + " " + assignment.Vehicle.Model,
-                    Vin = assignment.Vehicle.Vin,
-                    Status = assignment.Vehicle.Status,
-                    Year = assignment.Vehicle.Year ?? 0,
-                    CurrentMileageKm = assignment.Vehicle.CurrentMileageKm
-                }
             });
         }
 
         [HttpGet("assign/vehicle/{vehicleId}")]
-        public async Task<ActionResult<AssignedToDto>> IsAssignedVehicle(ulong vehicleId)
+        public async Task<IActionResult> IsAssignedVehicle(ulong vehicleId)
         {
-            var exisstingVehicles = await _context.Vehicles.AnyAsync(x => x.Id == vehicleId);
-            if (!exisstingVehicles)
-                return NotFound("Vehicle not found.");
-            var assignment = await _context.VehicleAssignments.Include(a => a.Driver).ThenInclude(d => d.User).Where(a => a.VehicleId == vehicleId && a.AssignedTo == null).FirstOrDefaultAsync();
-            if (assignment == null)
+            return await this.Run(async () =>
             {
-                var freeDrivers = await _context.Drivers.Include(d => d.User).Where(d => d.User.IsActive == true && d.User.Role != "ADMIN" && !_context.VehicleAssignments.Any(a => a.DriverId == d.Id && a.AssignedTo == null))
-                    .Select(d => new UserDto
+                var exisstingVehicles = await _context.Vehicles.AnyAsync(x => x.Id == vehicleId);
+                if (!exisstingVehicles)
+                    return NotFound("Vehicle not found.");
+                var assignment = await _context.VehicleAssignments.Include(a => a.Driver).ThenInclude(d => d.User).Where(a => a.VehicleId == vehicleId && a.AssignedTo == null).FirstOrDefaultAsync();
+                if (assignment == null)
+                {
+                    var freeDrivers = await _context.Drivers.Include(d => d.User).Where(d => d.User.IsActive == true && d.User.Role != "ADMIN" && !_context.VehicleAssignments.Any(a => a.DriverId == d.Id && a.AssignedTo == null))
+                        .Select(d => new UserDto
+                        {
+                            Id = d.User.Id,
+                            Email = d.User.Email
+                        }).ToListAsync();
+                    return Ok(new AssignedToDto
                     {
-                        Id = d.User.Id,
-                        Email = d.User.Email
-                    }).ToListAsync();
+                        IsAssigned = false,
+                        FreeDrivers = freeDrivers
+                    });
+                }
                 return Ok(new AssignedToDto
                 {
-                    IsAssigned = false,
-                    FreeDrivers = freeDrivers
+                    IsAssigned = true,
+                    AssignedDriver = new UserDto
+                    {
+                        Id = assignment.Driver.User.Id,
+                        FullName = assignment.Driver.User.FullName,
+                        Email = assignment.Driver.User.Email,
+                        Phone = assignment.Driver.User.Phone,
+                        LicenseNumber = assignment.Driver.LicenseNumber,
+                        LicenseExpiryDate = assignment.Driver.LicenseExpiryDate,
+                        Notes = assignment.Driver.Notes
+                    }
                 });
-            }
-            return Ok(new AssignedToDto
-            {
-                IsAssigned = true,
-                AssignedDriver = new UserDto
-                {
-                    Id = assignment.Driver.User.Id,
-                    FullName = assignment.Driver.User.FullName,
-                    Email = assignment.Driver.User.Email,
-                    Phone = assignment.Driver.User.Phone,
-                    LicenseNumber = assignment.Driver.LicenseNumber,
-                    LicenseExpiryDate = assignment.Driver.LicenseExpiryDate,
-                    Notes = assignment.Driver.Notes
-                }
             });
         }
 
@@ -160,20 +166,23 @@ namespace backend.Controllers
         [HttpGet("assignment/history/{id}")]
         public async Task<IActionResult> GetAssignmentHistory(ulong id)
         {
-            var vehicleExists = await _context.Vehicles.AnyAsync(v => v.Id == id);
-            if (!vehicleExists)
-                return NotFound("Vehicle not found.");
-            var history = await _context.VehicleAssignments.Where(a => a.VehicleId == id).OrderByDescending(a => a.AssignedFrom)
-                .Select(a => new AssignmentHistoryDto
-                {
-                    VehicleId = a.VehicleId,
-                    LicensePlate = a.Vehicle.LicensePlate,
-                    DriverId = a.DriverId,
-                    DriverEmail = a.Driver.User.Email,
-                    AssignedFrom = a.AssignedFrom,
-                    AssignedTo = a.AssignedTo
-                }).ToListAsync();
-            return Ok(history);
+            return await this.Run(async () =>
+            {
+                var vehicleExists = await _context.Vehicles.AnyAsync(v => v.Id == id);
+                if (!vehicleExists)
+                    return NotFound("Vehicle not found.");
+                var history = await _context.VehicleAssignments.Where(a => a.VehicleId == id).OrderByDescending(a => a.AssignedFrom)
+                    .Select(a => new AssignmentHistoryDto
+                    {
+                        VehicleId = a.VehicleId,
+                        LicensePlate = a.Vehicle.LicensePlate,
+                        DriverId = a.DriverId,
+                        DriverEmail = a.Driver.User.Email,
+                        AssignedFrom = a.AssignedFrom,
+                        AssignedTo = a.AssignedTo
+                    }).ToListAsync();
+                return Ok(history);
+            });
         }
     }
 }

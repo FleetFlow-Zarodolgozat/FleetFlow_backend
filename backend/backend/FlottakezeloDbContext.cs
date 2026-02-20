@@ -73,7 +73,7 @@ public partial class FlottakezeloDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("end_at");
             entity.Property(e => e.EventType)
-                .HasColumnType("enum('PERSONAL_TASK','ADMIN_TASK','SERVICE_APPOINTMENT')")
+                .HasColumnType("enum('PERSONAL_TASK','SERVICE_APPOINTMENT')")
                 .HasColumnName("event_type");
             entity.Property(e => e.OwnerUserId)
                 .HasColumnType("bigint(20) unsigned")
