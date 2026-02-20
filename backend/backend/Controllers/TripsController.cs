@@ -2,6 +2,7 @@
 using backend.Dtos.FuelLogs;
 using backend.Dtos.Trips;
 using backend.Models;
+using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,9 +16,11 @@ namespace backend.Controllers
     public class TripsController : ControllerBase
     {
         private readonly FlottakezeloDbContext _context;
-        public TripsController(FlottakezeloDbContext context)
+        private readonly INotificationService _notificationService;
+        public TripsController(FlottakezeloDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         [HttpGet("admin")]
@@ -139,6 +142,15 @@ namespace backend.Controllers
                     return StatusCode(500, "Only trips created within the last 24 hours can be deleted");
                 trip.IsDeleted = true;
                 trip.UpdatedAt = DateTime.UtcNow;
+                if (user.Role == "ADMIN")
+                {
+                    await _notificationService.CreateAsync(
+                        trip.Driver.UserId,
+                        "TRIP",
+                        "Trip deleted",
+                        "Your trip created on " + trip.CreatedAt.ToString("g") + " has been deleted by an admin."
+                    );
+                }
                 int modifiedRow = await _context.SaveChangesAsync();
                 if (modifiedRow == 0)
                     return StatusCode(500, "Failed to delete trip");
@@ -157,6 +169,12 @@ namespace backend.Controllers
                     return NotFound("Trip not found");
                 trip.IsDeleted = false;
                 trip.UpdatedAt = DateTime.UtcNow;
+                await _notificationService.CreateAsync(
+                    trip.Driver.UserId,
+                    "TRIP",
+                    "Trip restored",
+                    "Your Trip created on " + trip.CreatedAt.ToString("g") + " has been restored by an admin."
+                );
                 int modifiedRow = await _context.SaveChangesAsync();
                 if (modifiedRow == 0)
                     return StatusCode(500, "Failed to restore trip");

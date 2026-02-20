@@ -156,6 +156,12 @@ namespace backend.Controllers
                 if (existingAssignment == null)
                     return BadRequest("No active assignment found for this driver and vehicle.");
                 existingAssignment.AssignedTo = DateTime.UtcNow;
+                await _notificationService.CreateAsync(
+                    userId,
+                    "ASSIGNMENT",
+                    "Vehicle unassigned",
+                    $"You have been unassigned from vehicle {existingAssignment.Vehicle.LicensePlate}"
+                );
                 int updatedRows = await _context.SaveChangesAsync();
                 if (updatedRows == 0)
                     return StatusCode(500, "Failed to unassign vehicle.");
