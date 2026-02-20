@@ -25,22 +25,25 @@ namespace backend.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginDto loginDto)
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email && u.IsActive == true);
-            if (user == null)
-                return Unauthorized(new { message = "Invalid email or password" });
-            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash);
-            if (!isPasswordValid)
-                return Unauthorized(new { message = "Invalid email or password" });
-            var token = GenerateJwtToken(user.Email, user.Role);
-            return Ok(new LoginResponseDto
+            return await this.Run(async () =>
             {
-                Token = token,
-                FullName = user.FullName,
-                Role = user.Role,
-                Id = user.Id,
-                ProfileImgFileId = user.ProfileImgFileId
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email && u.IsActive == true);
+                if (user == null)
+                    return Unauthorized(new { message = "Invalid email or password" });
+                bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash);
+                if (!isPasswordValid)
+                    return Unauthorized(new { message = "Invalid email or password" });
+                var token = GenerateJwtToken(user.Email, user.Role);
+                return Ok(new LoginResponseDto
+                {
+                    Token = token,
+                    FullName = user.FullName,
+                    Role = user.Role,
+                    Id = user.Id,
+                    ProfileImgFileId = user.ProfileImgFileId
+                });
             });
         }
 

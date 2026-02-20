@@ -22,57 +22,72 @@ namespace backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetMine()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null)
-                return Unauthorized();
-            ulong userId = ulong.Parse(userIdClaim);
-            var list = await _notificationService.GetUserNotificationsAsync(userId);
-            return Ok(list);
+            return await this.Run(async () =>
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
+                var list = await _notificationService.GetUserNotificationsAsync(userId);
+                return Ok(list);
+            });
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(CreateNotificationDto dto)
         {
-            await _notificationService.CreateAsync(
+            return await this.Run(async () =>
+            {
+                await _notificationService.CreateAsync(
                 dto.UserId,
                 dto.Type,
                 dto.Title,
                 dto.Message,
                 dto.RelatedServiceRequestId);
-            return Created();
+                return Created();
+            });
         }
 
         [HttpPatch("read")]
         public async Task<IActionResult> MarkRead()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null)
-                return Unauthorized();
-            ulong userId = ulong.Parse(userIdClaim);
-            await _notificationService.MarkAsReadAsync(userId);
-            return NoContent();
+            return await this.Run(async () =>
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
+                await _notificationService.MarkAsReadAsync(userId);
+                return NoContent();
+            });
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(ulong id)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null)
-                return Unauthorized();
-            ulong userId = ulong.Parse(userIdClaim);
-            await _notificationService.DeleteAsync(id, userId);
-            return NoContent();
+            return await this.Run(async () =>
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
+                await _notificationService.DeleteAsync(id, userId);
+                return NoContent();
+            });
         }
 
         [HttpGet("unread-status")]
         public async Task<IActionResult> HasUnread()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null)
-                return Unauthorized();
-            ulong userId = ulong.Parse(userIdClaim);
-            var has = await _notificationService.HasUnreadNotifications(userId);
-            return Ok(has);
+            return await this.Run(async () =>
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
+                var has = await _notificationService.HasUnreadNotifications(userId);
+                return Ok(has);
+            });
         }
     }
 }

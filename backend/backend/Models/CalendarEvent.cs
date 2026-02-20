@@ -21,8 +21,6 @@ public partial class CalendarEvent
 
     public DateTime? EndAt { get; set; }
 
-    public string Status { get; set; } = null!;
-
     public ulong? RelatedServiceRequestId { get; set; }
 
     public DateTime CreatedAt { get; set; }

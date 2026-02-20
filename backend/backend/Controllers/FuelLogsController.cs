@@ -202,7 +202,6 @@ namespace backend.Controllers
                     Date = createFuelLogDto.Date,
                     OdometerKm = createFuelLogDto.OdometerKm,
                     TotalCost = createFuelLogDto.TotalCost,
-                    Currency = createFuelLogDto.Currency,
                     Liters = createFuelLogDto.Liters,
                     StationName = createFuelLogDto.StationName,
                     LocationText = createFuelLogDto.LocationText,

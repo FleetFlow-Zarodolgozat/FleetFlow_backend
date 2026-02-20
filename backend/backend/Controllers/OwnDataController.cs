@@ -124,7 +124,7 @@ namespace backend.Controllers
                 int modifiedRows = await _context.SaveChangesAsync();
                 if (modifiedRows == 0)
                     return StatusCode(500, "Failed to update profile");
-                return Ok();
+                return Ok("Profile updated successfully");
             });
         }
     }

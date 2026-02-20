@@ -23,37 +23,46 @@ namespace backend.Controllers
         [RequestSizeLimit(5 * 1024 * 1024)]
         public async Task<IActionResult> Upload(IFormFile file, [FromQuery] string folder)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest("File missing");
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
-            var extension = Path.GetExtension(file.FileName).ToLower();
-            if (!allowedExtensions.Contains(extension))
-                return BadRequest("Only .jpg, .jpeg, .png, .pdf files are allowed for receipt");
-            if (file.Length > 5 * 1024 * 1024)
-                return BadRequest("Receipt file size cannot exceed 5MB");
-            var allowedFolders = new[] { "profiles", "fuel_receipts", "service_recepiest" };
-            if (!allowedFolders.Contains(folder))
-                return BadRequest("Invalid folder");
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null)
-                return Unauthorized();
-            ulong userId = ulong.Parse(userIdClaim);
-            var id = await _fileService.SaveFileAsync(file, folder, userId);
-            return StatusCode(201, id);
+            return await this.Run(async () =>
+            {
+                if (file == null || file.Length == 0)
+                    return BadRequest("File missing");
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
+                var extension = Path.GetExtension(file.FileName).ToLower();
+                if (!allowedExtensions.Contains(extension))
+                    return BadRequest("Only .jpg, .jpeg, .png, .pdf files are allowed for receipt");
+                if (file.Length > 5 * 1024 * 1024)
+                    return BadRequest("Receipt file size cannot exceed 5MB");
+                var allowedFolders = new[] { "profiles", "fuel_receipts", "service_recepiest" };
+                if (!allowedFolders.Contains(folder))
+                    return BadRequest("Invalid folder");
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
+                var id = await _fileService.SaveFileAsync(file, folder, userId);
+                return StatusCode(201, id);
+            });
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(ulong id)
         {
-            var result = await _fileService.GetFileAsync(id);
-            return File(result.Content, result.MimeType, result.FileName);
+            return await this.Run(async () =>
+            {
+                var result = await _fileService.GetFileAsync(id);
+                return File(result.Content, result.MimeType, result.FileName);
+            });
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(ulong id)
         {
-            await _fileService.DeleteFileAsync(id);
-            return NoContent();
+            return await this.Run(async () =>
+            {
+                await _fileService.DeleteFileAsync(id);
+                return NoContent();
+            });
         }
     }
 }
