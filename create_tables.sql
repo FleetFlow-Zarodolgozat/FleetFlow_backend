@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS service_requests (
     'REQUESTED',
     'REJECTED',
     'APPROVED',
-    'WAITING_DRIVER_COST',
+    'DRIVER_COST',
     'CLOSED'
   ) NOT NULL DEFAULT 'REQUESTED',
 
@@ -193,8 +193,6 @@ CREATE TABLE IF NOT EXISTS service_requests (
   scheduled_start DATETIME NULL,
   scheduled_end DATETIME NULL,
   service_location VARCHAR(255) NULL,
-
-  completed_at DATETIME NULL,
 
   driver_report_cost DECIMAL(10,2) NULL,
   invoice_file_id BIGINT UNSIGNED NULL,
@@ -299,6 +297,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     ON DELETE SET NULL
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 
 
