@@ -184,7 +184,7 @@ namespace backend.Controllers
 
         [HttpPost]
         [Authorize(Roles = "DRIVER")]
-        public async Task<IActionResult> CreateTrip(CreateTripDto dto)
+        public async Task<IActionResult> CreateTrip([FromBody] CreateTripDto dto)
         {
             return await this.Run(async () =>
             {

@@ -180,7 +180,7 @@ namespace backend.Controllers
 
         [HttpPost]
         [Authorize(Roles = "DRIVER")]
-        public async Task<IActionResult> CreateFuellog(CreateFuelLogDto createFuelLogDto)
+        public async Task<IActionResult> CreateFuellog([FromForm] CreateFuelLogDto createFuelLogDto)
         {
             return await this.Run(async () =>
             {
