@@ -140,24 +140,6 @@ namespace backend.Controllers
             });
         }
 
-        //[HttpPatch("maintenance/{id}")]
-        //public async Task<IActionResult> SetVehicleMaintenance(ulong id)
-        //{
-        //    return await this.Run(async () =>
-        //    {
-        //        Vehicle? vehicle = await _context.Vehicles.FindAsync(id);
-        //        if (vehicle == null)
-        //            return NotFound("Vehicle not found.");
-        //        vehicle.Status = "MAINTENANCE";
-        //        vehicle.UpdatedAt = DateTime.UtcNow;
-        //        _context.Vehicles.Update(vehicle);
-        //        int modifiedRows = await _context.SaveChangesAsync();
-        //        if (modifiedRows == 0)
-        //            return StatusCode(500, "Failed to set vehicle to maintenance.");
-        //        return Ok($"Vehicle with ID {id} set to maintenance successfully.");
-        //    });
-        //}
-
         [HttpPatch("activate/{id}")]
         public async Task<IActionResult> ActivateVehicle(ulong id)
         {
