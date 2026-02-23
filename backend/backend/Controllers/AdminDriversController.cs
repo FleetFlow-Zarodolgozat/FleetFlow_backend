@@ -1,6 +1,7 @@
 ﻿using backend.Dtos;
 using backend.Dtos.Users;
 using backend.Models;
+using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,9 +17,11 @@ namespace backend.Controllers
     public class AdminDriversController : ControllerBase
     {
         private readonly FlottakezeloDbContext _context;
-        public AdminDriversController(FlottakezeloDbContext context)
+        private readonly INotificationService _notificationService;
+        public AdminDriversController(FlottakezeloDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -90,7 +93,6 @@ namespace backend.Controllers
                 _context.Users.Update(driver);
                 if (calendarEvents.Count > 0)
                     _context.CalendarEvents.RemoveRange(calendarEvents);
-                //notificaton
                 if (driver1 != null)
                 {
                     VehicleAssignment? vehicleAssignment = await _context.VehicleAssignments.FirstOrDefaultAsync(x => x.DriverId == driver1.Id && x.AssignedTo == null);
@@ -154,6 +156,12 @@ namespace backend.Controllers
                     Notes = createDriverDto.Notes
                 };
                 _context.Drivers.Add(newDriver);
+                await _notificationService.CreateAsync(
+                    newDriver.Id,
+                    "ACCOUNT",
+                    "Driver Account Created",
+                    "Your driver account has been created by the administrator. You can now log in and start using the fleet management system."
+                );
                 int createdDriver = await _context.SaveChangesAsync();
                 if (createdUser == 0 || createdDriver == 0)
                     return StatusCode(500, "Failed to create driver.");
@@ -190,6 +198,12 @@ namespace backend.Controllers
                     _context.Drivers.Update(driver1);
                 }
                 _context.Users.Update(driver);
+                await _notificationService.CreateAsync(
+                    id,
+                    "ACCOUNT",
+                    "Driver Account Updated",
+                    "Your driver account information has been updated by the administrator. Please review the changes and contact support if you have any questions."
+                );
                 int updatedRows = await _context.SaveChangesAsync();
                 if (updatedRows == 0)
                     return StatusCode(500, "Failed to update driver.");

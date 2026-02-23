@@ -17,10 +17,12 @@ namespace backend.Controllers
     {
         private readonly FlottakezeloDbContext _context;
         private readonly IFileService _fileService;
-        public FuelLogsController(FlottakezeloDbContext context, IFileService fileService)
+        private readonly INotificationService _notificationService;
+        public FuelLogsController(FlottakezeloDbContext context, IFileService fileService, INotificationService notificationService)
         {
             _context = context;
             _fileService = fileService;
+            _notificationService = notificationService;
         }
 
         [HttpGet("admin")]
@@ -136,6 +138,15 @@ namespace backend.Controllers
                     return StatusCode(500, "Only fuellogs created within the last 24 hours can be deleted");
                 fuellog.IsDeleted = true;
                 fuellog.UpdatedAt = DateTime.UtcNow;
+                if (user.Role == "ADMIN")
+                {
+                    await _notificationService.CreateAsync(
+                        fuellog.Driver.UserId,
+                        "FUEL_LOG",
+                        "Fuel log deleted",
+                        "Your fuel log created on " + fuellog.CreatedAt.ToString("g") + " has been deleted by an admin."
+                    );
+                }
                 int modifiedRow = await _context.SaveChangesAsync();
                 if (modifiedRow == 0)
                     return StatusCode(500, "Failed to delete fuellog");
@@ -154,6 +165,12 @@ namespace backend.Controllers
                     return NotFound("Fuellog not found");
                 fuellog.IsDeleted = false;
                 fuellog.UpdatedAt = DateTime.UtcNow;
+                await _notificationService.CreateAsync(
+                    fuellog.Driver.UserId,
+                    "FUEL_LOG",
+                    "Fuel log restored",
+                    "Your fuel log created on " + fuellog.CreatedAt.ToString("g") + " has been restored by an admin."
+                );
                 int modifiedRow = await _context.SaveChangesAsync();
                 if (modifiedRow == 0)
                     return StatusCode(500, "Failed to rstore fuellog");
