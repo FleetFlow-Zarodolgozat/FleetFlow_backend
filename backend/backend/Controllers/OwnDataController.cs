@@ -44,7 +44,8 @@ namespace backend.Controllers
                         FullName = user.FullName,
                         Email = user.Email,
                         Phone = user.Phone,
-                        ProfileImgFileId = user.ProfileImgFileId
+                        ProfileImgFileId = user.ProfileImgFileId,
+                        Role = user.Role
                     });
                 }
                 else
@@ -56,7 +57,8 @@ namespace backend.Controllers
                         Phone = user.Phone,
                         LicenseNumber = user.Driver!.LicenseNumber,
                         LicenseExpiryDate = user.Driver!.LicenseExpiryDate,
-                        ProfileImgFileId = user.ProfileImgFileId
+                        ProfileImgFileId = user.ProfileImgFileId,
+                        Role = user.Role
                     });
                 }
             });

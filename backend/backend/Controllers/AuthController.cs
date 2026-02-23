@@ -31,30 +31,40 @@ namespace backend.Controllers
             {
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email && u.IsActive == true);
                 if (user == null)
-                    return Unauthorized(new { message = "Invalid email or password" });
+                    return Unauthorized("Invalid email or password");
                 bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash);
                 if (!isPasswordValid)
-                    return Unauthorized(new { message = "Invalid email or password" });
-                var token = GenerateJwtToken(user.Email, user.Role);
-                return Ok(new LoginResponseDto
-                {
-                    Token = token,
-                    FullName = user.FullName,
-                    Role = user.Role,
-                    Id = user.Id,
-                    ProfileImgFileId = user.ProfileImgFileId
-                });
+                    return Unauthorized("Invalid email or password");
+                var token = GenerateJwtToken(user.Email, user.Role, user.Id);
+                return Ok(token);
             });
         }
 
-        private string GenerateJwtToken(string username, string role)
+        [HttpPost("login-mobile")]
+        public async Task<IActionResult> LoginMobile([FromBody] LoginDto loginDto)
+        {
+            return await this.Run(async () =>
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email && u.IsActive == true && u.Role == "DRIVER");
+                if (user == null)
+                    return Unauthorized("Invalid email or password or user role");
+                bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash);
+                if (!isPasswordValid)
+                    return Unauthorized("Invalid email or password");
+                var token = GenerateJwtToken(user.Email, user.Role, user.Id);
+                return Ok(token);
+            });
+        }
+
+        private string GenerateJwtToken(string email, string role, ulong id)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, username),
-                new Claim(ClaimTypes.Role, role)
+                new Claim(ClaimTypes.Email, email),
+                new Claim(ClaimTypes.Role, role),
+                new Claim(ClaimTypes.NameIdentifier, id.ToString())
             };
             var token = new JwtSecurityToken(
                 issuer: jwtSettings["Issuer"],
