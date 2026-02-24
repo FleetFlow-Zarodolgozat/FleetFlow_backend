@@ -1,4 +1,6 @@
 ﻿using backend.Services.Interfaces;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 namespace backend.Services
 {
@@ -48,8 +50,10 @@ namespace backend.Services
             var path = Directory.GetFiles(Path.Combine(_env.ContentRootPath, "storage"), file.StoredName, SearchOption.AllDirectories).FirstOrDefault();
             if (path == null)
                 throw new Exception("File missing from storage");
-            var bytes = await File.ReadAllBytesAsync(path);
-            return (bytes, file.MimeType, file.OriginalName);
+            await using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+            using var ms = new MemoryStream();
+            await fs.CopyToAsync(ms);
+            return (ms.ToArray(), file.MimeType, file.OriginalName);
         }
 
         public async Task DeleteFileAsync(ulong id)
@@ -62,6 +66,28 @@ namespace backend.Services
                 File.Delete(path);
             _context.Files.Remove(file);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<(byte[] Content, string MimeType)> GetUserThumbnailAsync(ulong userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null || user.ProfileImgFileId == null)
+                throw new Exception("Profile image not found");
+            var file = await _context.Files.FindAsync(user.ProfileImgFileId.Value);
+            if (file == null)
+                throw new Exception("File not found");
+            var path = Directory.GetFiles(Path.Combine(_env.ContentRootPath, "storage"), file.StoredName, SearchOption.AllDirectories).FirstOrDefault();
+            if (path == null)
+                throw new Exception("File missing from storage");
+            using var image = await Image.LoadAsync(path);
+            image.Mutate(x => x.Resize(new ResizeOptions
+            {
+                Size = new Size(64, 64),
+                Mode = ResizeMode.Crop
+            }));
+            using var ms = new MemoryStream();
+            await image.SaveAsJpegAsync(ms);
+            return (ms.ToArray(), "image/jpeg");
         }
     }
 }

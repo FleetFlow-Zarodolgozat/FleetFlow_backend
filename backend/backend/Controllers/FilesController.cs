@@ -64,5 +64,15 @@ namespace backend.Controllers
                 return NoContent();
             });
         }
+
+        [HttpGet("thumbnail/{userId}")]
+        public async Task<IActionResult> GetUserThumbnail(ulong userId)
+        {
+            return await this.Run(async () =>
+            {
+                var result = await _fileService.GetUserThumbnailAsync(userId);
+                return File(result.Content, result.MimeType, enableRangeProcessing: true);
+            });
+        }
     }
 }
