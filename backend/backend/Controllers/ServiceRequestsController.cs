@@ -181,6 +181,8 @@ namespace backend.Controllers
                 var serviceRequest = await _context.ServiceRequests.FirstOrDefaultAsync(x => x.Id == id && x.CreatedByDriverUserId == userId);
                 if (serviceRequest == null)
                     return NotFound("Service request not found");
+                if (serviceRequest.CreatedByDriverUserId != userId)
+                    return Forbid("You are not the creator of this service request");
                 if (serviceRequest.Status != "REQUESTED")
                     return BadRequest("Only service requests with REQUESTED status can be cancelled");
                 _context.ServiceRequests.Remove(serviceRequest);
