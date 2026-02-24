@@ -2,7 +2,7 @@
 
 namespace backend.Dtos.ServiceRequests
 {
-    public class EditUploadedData
+    public class EditUploadedDataDto
     {
         public decimal DriverReportCost { get; set; }
         [MaxLength(100)]

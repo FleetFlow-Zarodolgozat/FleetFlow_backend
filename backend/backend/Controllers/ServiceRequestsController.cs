@@ -181,6 +181,8 @@ namespace backend.Controllers
                 var serviceRequest = await _context.ServiceRequests.FirstOrDefaultAsync(x => x.Id == id && x.CreatedByDriverUserId == userId);
                 if (serviceRequest == null)
                     return NotFound("Service request not found");
+                if (serviceRequest.CreatedByDriverUserId != userId)
+                    return Forbid("You are not the creator of this service request");
                 if (serviceRequest.Status != "REQUESTED")
                     return BadRequest("Only service requests with REQUESTED status can be cancelled");
                 _context.ServiceRequests.Remove(serviceRequest);
@@ -221,7 +223,7 @@ namespace backend.Controllers
 
         [HttpPatch("approve/{id}")]
         [Authorize(Roles = "ADMIN")]
-        public async Task<IActionResult> ApproveServiceRequest(ulong id, [FromBody] ApproveService dto)
+        public async Task<IActionResult> ApproveServiceRequest(ulong id, [FromBody] ApproveServiceDto dto)
         {
             return await this.Run(async () =>
             {
@@ -318,7 +320,7 @@ namespace backend.Controllers
 
         [HttpPatch("edit-uploaded-data/{id}")]
         [Authorize(Roles = "DRIVER")]
-        public async Task<IActionResult> EditUploadedData(ulong id, [FromForm] EditUploadedData dto)
+        public async Task<IActionResult> EditUploadedData(ulong id, [FromForm] EditUploadedDataDto dto)
         {
             return await this.Run(async () =>
             {
@@ -379,7 +381,9 @@ namespace backend.Controllers
                     return Forbid("You are not the admin assigned to this service request");
                 serviceRequest.Status = "CLOSED";
                 serviceRequest.ClosedAt = DateTime.UtcNow;
+                serviceRequest.UpdatedAt = DateTime.UtcNow;
                 serviceRequest.Vehicle.Status = "ACTIVE";
+                serviceRequest.Vehicle.UpdatedAt = DateTime.UtcNow;
                 await _notificationService.CreateAsync(
                     serviceRequest.CreatedByDriverUserId,
                     "SERVICE_REQUEST",

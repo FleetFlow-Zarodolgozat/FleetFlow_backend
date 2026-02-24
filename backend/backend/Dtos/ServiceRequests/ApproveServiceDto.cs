@@ -2,7 +2,7 @@
 
 namespace backend.Dtos.ServiceRequests
 {
-    public class ApproveService
+    public class ApproveServiceDto
     {
         [Required]
         public DateTime ScheduledStart { get; set; }

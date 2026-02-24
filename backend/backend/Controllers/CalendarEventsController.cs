@@ -89,7 +89,9 @@ namespace backend.Controllers
                     return NotFound("User not found");
                 var calendarEvent = await _context.CalendarEvents.Where(x => x.Id == id && x.OwnerUserId == userId).FirstOrDefaultAsync();
                 if (calendarEvent == null)
-                    return NotFound();
+                    return NotFound("Calendar event not found");
+                if (calendarEvent.CreatedByUserId != userId)
+                    return Forbid("You are not the creator of this calendar event");
                 if (calendarEvent.EventType == "SERVICE_APPOINTMENT" && user.Role != "ADMIN")
                     return Forbid("Not allowed to delete");
                 _context.CalendarEvents.Remove(calendarEvent);

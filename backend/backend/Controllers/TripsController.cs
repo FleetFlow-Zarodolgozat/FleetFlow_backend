@@ -138,6 +138,8 @@ namespace backend.Controllers
                 var trip = await _context.Trips.FindAsync(id);
                 if (trip == null)
                     return NotFound("Trip not found");
+                if (user.Role == "DRIVER" && trip.Driver.UserId != userId)
+                    return Forbid("You are not the creator of this trip");
                 if (user.Role == "DRIVER" && trip.CreatedAt.AddHours(24) < DateTime.UtcNow)
                     return StatusCode(500, "Only trips created within the last 24 hours can be deleted");
                 trip.IsDeleted = true;
