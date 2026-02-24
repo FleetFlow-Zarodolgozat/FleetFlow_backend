@@ -135,7 +135,7 @@ namespace backend.Controllers
                 if (fuellog == null)
                     return NotFound("Fuellog not found");
                 if (user.Role == "DRIVER" && fuellog.Driver.UserId != userId)
-                    return Forbid("You are not the creator of this trip");
+                    return Forbid("You are not the creator of this fuel log");
                 if (user.Role == "DRIVER" && fuellog.CreatedAt.AddHours(24) < DateTime.UtcNow)
                     return StatusCode(500, "Only fuellogs created within the last 24 hours can be deleted");
                 fuellog.IsDeleted = true;
