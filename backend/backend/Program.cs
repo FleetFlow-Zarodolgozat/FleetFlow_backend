@@ -23,6 +23,7 @@ namespace backend
                     throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
                 option.UseMySQL(coonectionString);
             });
+            builder.Services.AddHostedService<CleanupBackgroundService>();
             builder.Services.AddScoped<IFileService, FileService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
             builder.Services.AddControllers();
