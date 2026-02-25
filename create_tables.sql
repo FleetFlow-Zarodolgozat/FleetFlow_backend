@@ -9,7 +9,7 @@ USE flottakezelo_db
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   email VARCHAR(255) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NULL,
   role ENUM('ADMIN','DRIVER') NOT NULL,
   full_name VARCHAR(255) NOT NULL,
   phone VARCHAR(50) NULL,
@@ -299,7 +299,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -------------------------
--- 10) PASSWORD_TOKEN
+-- 11) PASSWORD_TOKEN
 -- -------------------------
 CREATE TABLE password_tokens (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
