@@ -13,10 +13,8 @@ namespace backend.Services
             message.Subject = subject;
             message.Body = html;
             message.IsBodyHtml = true;
-            message.From = new MailAddress("noreply@flotta.hu");
-            using var smtp = new SmtpClient("smtp.gmail.com", 587);
-            smtp.Credentials =
-                new NetworkCredential("email", "app-password");
+            message.From = new MailAddress("fleetflow.info@gmail.com", "FleetFlow2006$");
+            using var smtp = new SmtpClient("smtp.gmail.com", 465);
             smtp.EnableSsl = true;
             await smtp.SendMailAsync(message);
         }

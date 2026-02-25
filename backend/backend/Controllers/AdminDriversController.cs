@@ -20,11 +20,13 @@ namespace backend.Controllers
         private readonly FlottakezeloDbContext _context;
         private readonly INotificationService _notificationService;
         private readonly IEmailService _emailService;
-        public AdminDriversController(FlottakezeloDbContext context, INotificationService notificationService, IEmailService emailService)
+        private readonly ITokenService _tokenService;
+        public AdminDriversController(FlottakezeloDbContext context, INotificationService notificationService, IEmailService emailService, ITokenService tokenService)
         {
             _context = context;
             _notificationService = notificationService;
             _emailService = emailService;
+            _tokenService = tokenService;
         }
 
         [HttpGet]
@@ -147,7 +149,6 @@ namespace backend.Controllers
                     FullName = createDriverDto.FullName,
                     Email = createDriverDto.Email,
                     Phone = createDriverDto.Phone,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("fleetflowuser"),
                     IsActive = true,
                     Role = "DRIVER"
                 };
@@ -161,6 +162,12 @@ namespace backend.Controllers
                     Notes = createDriverDto.Notes
                 };
                 _context.Drivers.Add(newDriver);
+                //_context.PasswordTokens.Add(new PasswordToken
+                //{
+                //    UserId = newUser.Id,
+                //    TokenHash = BCrypt.Net.BCrypt.HashPassword(_tokenService.GenerateSecureToken()),
+                //    ExpiresAt = DateTime.UtcNow.AddHours(24)
+                //});
                 await _notificationService.CreateAsync(
                     newDriver.Id,
                     "ACCOUNT",
