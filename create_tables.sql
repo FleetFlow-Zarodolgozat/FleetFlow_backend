@@ -306,7 +306,7 @@ CREATE TABLE password_tokens (
 
   user_id BIGINT UNSIGNED NOT NULL,
 
-  token VARCHAR(128) NOT NULL,
+  token_hash VARCHAR(255) NOT NULL,
   expires_at DATETIME NOT NULL,
 
   used TINYINT(1) NOT NULL DEFAULT 0,
@@ -318,3 +318,4 @@ CREATE TABLE password_tokens (
     REFERENCES users(id)
     ON DELETE CASCADE
 );
+
