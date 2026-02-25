@@ -3,6 +3,7 @@ using backend.Dtos.FuelLogs;
 using backend.Dtos.Users;
 using backend.Dtos.Vehicles;
 using backend.Models;
+using backend.Services;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -18,10 +19,14 @@ namespace backend.Controllers
     {
         private readonly FlottakezeloDbContext _context;
         private readonly IFileService _fileService;
-        public OwnDataController(FlottakezeloDbContext context, IFileService fileService)
+        private readonly ITokenService _tokenService;
+        private readonly IEmailService _emailService;
+        public OwnDataController(FlottakezeloDbContext context, IFileService fileService, ITokenService tokenService, IEmailService emailService)
         {
             _context = context;
             _fileService = fileService;
+            _tokenService = tokenService;
+            _emailService = emailService;
         }
 
         [HttpGet("mine")]
@@ -129,6 +134,46 @@ namespace backend.Controllers
                     return StatusCode(500, "Failed to update profile");
                 return Ok("Profile updated successfully");
             });
+        }
+
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            if (user == null)
+                return Ok();
+            var rawToken = _tokenService.GenerateSecureToken();
+            _context.PasswordTokens.Add(new PasswordToken
+            {
+                UserId = user.Id,
+                TokenHash = BCrypt.Net.BCrypt.HashPassword(rawToken),
+                ExpiresAt = DateTime.UtcNow.AddHours(1)
+            });
+            await _context.SaveChangesAsync();
+            var link = $"http://localhost:3000/api/profile/set-password?token={rawToken}";
+            await _emailService.SendAsync(
+                user.Email,
+                "Jelszó visszaállítás",
+                $"Kedves {user.FullName},\n\nJelszó-visszaállítási kérést kaptunk a fiókodhoz. Az új jelszó beállításához kattints az alábbi linkre:\n\n{link}\n\nA link 1 óráig érvényes. Ha nem te kérted a jelszó-visszaállítást, kérjük hagyd figyelmen kívül ezt az e-mailt.\n\nÜdvözlettel,\nFleetFlow Team"
+            );
+            return Ok();
+        }
+
+        [HttpPost("set-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SetPassword([FromBody] SetPasswordDto dto)
+        {
+            if (dto.Password != dto.ConfirmPassword)
+                return BadRequest("Passwords mismatch");
+            var tokens = await _context.PasswordTokens.Include(t => t.User).ToListAsync();
+            var token = tokens.FirstOrDefault(t => BCrypt.Net.BCrypt.Verify(dto.Token, t.TokenHash) && t.ExpiresAt > DateTime.UtcNow);
+            if (token == null)
+                return BadRequest("Invalid token");
+            token.User.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+            _context.PasswordTokens.Remove(token);
+            await _context.SaveChangesAsync();
+            return Ok();
         }
     }
 }

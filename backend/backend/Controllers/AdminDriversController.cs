@@ -1,6 +1,7 @@
 ﻿using backend.Dtos;
 using backend.Dtos.Users;
 using backend.Models;
+using backend.Services;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace backend.Controllers
 {
@@ -18,10 +20,14 @@ namespace backend.Controllers
     {
         private readonly FlottakezeloDbContext _context;
         private readonly INotificationService _notificationService;
-        public AdminDriversController(FlottakezeloDbContext context, INotificationService notificationService)
+        private readonly IEmailService _emailService;
+        private readonly ITokenService _tokenService;
+        public AdminDriversController(FlottakezeloDbContext context, INotificationService notificationService, IEmailService emailService, ITokenService tokenService)
         {
             _context = context;
             _notificationService = notificationService;
+            _emailService = emailService;
+            _tokenService = tokenService;
         }
 
         [HttpGet]
@@ -103,6 +109,11 @@ namespace backend.Controllers
                     }
                 }
                 driver.UpdatedAt = DateTime.UtcNow;
+                await _emailService.SendAsync(
+                    driver.Email,
+                    "Your account was deactivated",
+                    "Dear " + driver.FullName + ",\n\nYour driver account has been deactivated by the administrator. You will no longer have access to the fleet management system.\n\nAll your scheduled calendar events have been removed, and any active vehicle assignments have been ended.\n\nIf you believe this was done in error or have any questions, please contact your fleet administrator.\n\nBest regards,\nFleetFlow Team"
+                );
                 int modifiedRows = await _context.SaveChangesAsync();
                 if (modifiedRows == 0)
                     return StatusCode(500, "Failed to deactivate driver.");
@@ -121,6 +132,11 @@ namespace backend.Controllers
                 driver.IsActive = true;
                 driver.UpdatedAt = DateTime.UtcNow;
                 _context.Users.Update(driver);
+                await _emailService.SendAsync(
+                    driver.Email,
+                    "Your account was activated",
+                    "Dear " + driver.FullName + ",\n\nGood news! Your driver account has been activated by the administrator. You now have full access to the fleet management system.\n\nYou can log in using your credentials and resume your work with the fleet.\n\nIf you have any questions or need assistance, please contact your fleet administrator.\n\nBest regards,\nFleetFlow Team"
+                );
                 int modifiedRows = await _context.SaveChangesAsync();
                 if (modifiedRows == 0)
                     return StatusCode(500, "Failed to activate driver.");
@@ -142,7 +158,6 @@ namespace backend.Controllers
                     FullName = createDriverDto.FullName,
                     Email = createDriverDto.Email,
                     Phone = createDriverDto.Phone,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("fleetflowuser"),
                     IsActive = true,
                     Role = "DRIVER"
                 };
@@ -156,11 +171,24 @@ namespace backend.Controllers
                     Notes = createDriverDto.Notes
                 };
                 _context.Drivers.Add(newDriver);
+                var rawToken = _tokenService.GenerateSecureToken();
+                _context.PasswordTokens.Add(new PasswordToken
+                {
+                    UserId = newUser.Id,
+                    TokenHash = BCrypt.Net.BCrypt.HashPassword(rawToken),
+                    ExpiresAt = DateTime.UtcNow.AddHours(24)
+                });
                 await _notificationService.CreateAsync(
-                    newDriver.Id,
+                    newUser.Id,
                     "ACCOUNT",
                     "Driver Account Created",
                     "Your driver account has been created by the administrator. You can now log in and start using the fleet management system."
+                );
+                var link = $"http://localhost:3000/api/profile/set-password?token={rawToken}";
+                await _emailService.SendAsync(
+                    newUser.Email,
+                    "Welcome to FleetFlow - Set Your Password",
+                    $"Dear {newUser.FullName},\n\nYour driver account has been created by the administrator. Welcome to the FleetFlow fleet management system!\n\nTo get started, please set your password by clicking the link below:\n\n{link}\n\nThis link will expire in 24 hours. After setting your password, you will be able to log in and access all the features of the system.\n\nIf you have any questions or need assistance, please contact your fleet administrator.\n\nBest regards,\nFleetFlow Team"
                 );
                 int createdDriver = await _context.SaveChangesAsync();
                 if (createdUser == 0 || createdDriver == 0)

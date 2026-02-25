@@ -26,6 +26,8 @@ public partial class FlottakezeloDbContext : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
+    public virtual DbSet<PasswordToken> PasswordTokens { get; set; }
+
     public virtual DbSet<ServiceRequest> ServiceRequests { get; set; }
 
     public virtual DbSet<Trip> Trips { get; set; }
@@ -206,6 +208,7 @@ public partial class FlottakezeloDbContext : DbContext
             entity.Property(e => e.DriverId)
                 .HasColumnType("bigint(20) unsigned")
                 .HasColumnName("driver_id");
+            entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
             entity.Property(e => e.Liters)
                 .HasPrecision(10)
                 .HasColumnName("liters");
@@ -228,6 +231,11 @@ public partial class FlottakezeloDbContext : DbContext
             entity.Property(e => e.TotalCost)
                 .HasPrecision(10)
                 .HasColumnName("total_cost");
+            entity.Property(e => e.UpdatedAt)
+                .ValueGeneratedOnAddOrUpdate()
+                .HasDefaultValueSql("'current_timestamp()'")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
             entity.Property(e => e.VehicleId)
                 .HasColumnType("bigint(20) unsigned")
                 .HasColumnName("vehicle_id");
@@ -246,6 +254,82 @@ public partial class FlottakezeloDbContext : DbContext
                 .HasForeignKey(d => d.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fk_fuel_vehicle");
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("notifications");
+
+            entity.HasIndex(e => e.RelatedServiceRequestId, "ix_notif_related_service");
+
+            entity.HasIndex(e => new { e.UserId, e.IsRead, e.CreatedAt }, "ix_notif_user_read");
+
+            entity.Property(e => e.Id)
+                .HasColumnType("bigint(20) unsigned")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("'current_timestamp()'")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.IsRead).HasColumnName("is_read");
+            entity.Property(e => e.Message)
+                .HasColumnType("text")
+                .HasColumnName("message");
+            entity.Property(e => e.RelatedServiceRequestId)
+                .HasDefaultValueSql("'NULL'")
+                .HasColumnType("bigint(20) unsigned")
+                .HasColumnName("related_service_request_id");
+            entity.Property(e => e.Title)
+                .HasMaxLength(160)
+                .HasColumnName("title");
+            entity.Property(e => e.Type)
+                .HasMaxLength(50)
+                .HasColumnName("type");
+            entity.Property(e => e.UserId)
+                .HasColumnType("bigint(20) unsigned")
+                .HasColumnName("user_id");
+
+            entity.HasOne(d => d.RelatedServiceRequest).WithMany(p => p.Notifications)
+                .HasForeignKey(d => d.RelatedServiceRequestId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_notif_related_service");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Notifications)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("fk_notif_user");
+        });
+
+        modelBuilder.Entity<PasswordToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("password_tokens");
+
+            entity.HasIndex(e => e.UserId, "fk_pt_user");
+
+            entity.Property(e => e.Id)
+                .HasColumnType("bigint(20) unsigned")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("'current_timestamp()'")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.ExpiresAt)
+                .HasColumnType("datetime")
+                .HasColumnName("expires_at");
+            entity.Property(e => e.TokenHash)
+                .HasMaxLength(255)
+                .HasColumnName("token_hash");
+            entity.Property(e => e.Used).HasColumnName("used");
+            entity.Property(e => e.UserId)
+                .HasColumnType("bigint(20) unsigned")
+                .HasColumnName("user_id");
+
+            entity.HasOne(d => d.User).WithMany(p => p.PasswordTokens)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("fk_pt_user");
         });
 
         modelBuilder.Entity<ServiceRequest>(entity =>
@@ -395,6 +479,7 @@ public partial class FlottakezeloDbContext : DbContext
                 .HasDefaultValueSql("'NULL'")
                 .HasColumnType("datetime")
                 .HasColumnName("end_time");
+            entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
             entity.Property(e => e.Notes)
                 .HasDefaultValueSql("'NULL'")
                 .HasColumnType("text")
@@ -410,6 +495,11 @@ public partial class FlottakezeloDbContext : DbContext
             entity.Property(e => e.StartTime)
                 .HasColumnType("datetime")
                 .HasColumnName("start_time");
+            entity.Property(e => e.UpdatedAt)
+                .ValueGeneratedOnAddOrUpdate()
+                .HasDefaultValueSql("'current_timestamp()'")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
             entity.Property(e => e.VehicleId)
                 .HasColumnType("bigint(20) unsigned")
                 .HasColumnName("vehicle_id");
@@ -444,20 +534,22 @@ public partial class FlottakezeloDbContext : DbContext
             entity.Property(e => e.FullName)
                 .HasMaxLength(255)
                 .HasColumnName("full_name");
-            entity.Property(e => e.ProfileImgFileId)
-                .HasColumnType("bigint(20) unsigned")
-                .HasColumnName("profile_img_file_id");
             entity.Property(e => e.IsActive)
                 .IsRequired()
                 .HasDefaultValueSql("'1'")
                 .HasColumnName("is_active");
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
+                .HasDefaultValueSql("'NULL'")
                 .HasColumnName("password_hash");
             entity.Property(e => e.Phone)
                 .HasMaxLength(50)
                 .HasDefaultValueSql("'NULL'")
                 .HasColumnName("phone");
+            entity.Property(e => e.ProfileImgFileId)
+                .HasDefaultValueSql("'NULL'")
+                .HasColumnType("bigint(20) unsigned")
+                .HasColumnName("profile_img_file_id");
             entity.Property(e => e.Role)
                 .HasColumnType("enum('ADMIN','DRIVER')")
                 .HasColumnName("role");

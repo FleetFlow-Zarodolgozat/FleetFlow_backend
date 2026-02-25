@@ -32,6 +32,8 @@ namespace backend.Controllers
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email && u.IsActive == true);
                 if (user == null)
                     return Unauthorized("Invalid email or password");
+                if (string.IsNullOrEmpty(user.PasswordHash))
+                    return Unauthorized("Password not set. Please use the password reset link.");
                 bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash);
                 if (!isPasswordValid)
                     return Unauthorized("Invalid email or password");
@@ -48,6 +50,8 @@ namespace backend.Controllers
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email && u.IsActive == true && u.Role == "DRIVER");
                 if (user == null)
                     return Unauthorized("Invalid email or password or user role");
+                if (string.IsNullOrEmpty(user.PasswordHash))
+                    return Unauthorized("Password not set. Please use the password reset link.");
                 bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash);
                 if (!isPasswordValid)
                     return Unauthorized("Invalid email or password");

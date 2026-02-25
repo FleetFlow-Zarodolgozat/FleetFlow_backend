@@ -9,7 +9,7 @@ public partial class User
 
     public string Email { get; set; } = null!;
 
-    public string PasswordHash { get; set; } = null!;
+    public string? PasswordHash { get; set; }
 
     public string Role { get; set; } = null!;
 
@@ -34,6 +34,8 @@ public partial class User
     public virtual ICollection<File> Files { get; set; } = new List<File>();
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
+    public virtual ICollection<PasswordToken> PasswordTokens { get; set; } = new List<PasswordToken>();
 
     public virtual ICollection<ServiceRequest> ServiceRequestAdminUsers { get; set; } = new List<ServiceRequest>();
 

@@ -26,6 +26,8 @@ namespace backend
             builder.Services.AddHostedService<CleanupBackgroundService>();
             builder.Services.AddScoped<IFileService, FileService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddSwaggerGen(options =>
