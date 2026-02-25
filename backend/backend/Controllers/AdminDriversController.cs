@@ -1,6 +1,7 @@
 ﻿using backend.Dtos;
 using backend.Dtos.Users;
 using backend.Models;
+using backend.Services;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -18,10 +19,12 @@ namespace backend.Controllers
     {
         private readonly FlottakezeloDbContext _context;
         private readonly INotificationService _notificationService;
-        public AdminDriversController(FlottakezeloDbContext context, INotificationService notificationService)
+        private readonly IEmailService _emailService;
+        public AdminDriversController(FlottakezeloDbContext context, INotificationService notificationService, IEmailService emailService)
         {
             _context = context;
             _notificationService = notificationService;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -103,6 +106,7 @@ namespace backend.Controllers
                     }
                 }
                 driver.UpdatedAt = DateTime.UtcNow;
+                await _emailService.SendAsync(driver.Email, "Your account was deactivated", "Dear " + driver.FullName + ",\n\nYour driver account has been deactivated by the administrator. You will no longer have access to the fleet management system.\n\nAll your scheduled calendar events have been removed, and any active vehicle assignments have been ended.\n\nIf you believe this was done in error or have any questions, please contact your fleet administrator.\n\nBest regards,\nFleetFlow Team");
                 int modifiedRows = await _context.SaveChangesAsync();
                 if (modifiedRows == 0)
                     return StatusCode(500, "Failed to deactivate driver.");
@@ -121,6 +125,7 @@ namespace backend.Controllers
                 driver.IsActive = true;
                 driver.UpdatedAt = DateTime.UtcNow;
                 _context.Users.Update(driver);
+                await _emailService.SendAsync(driver.Email, "Your account was activated", "Dear " + driver.FullName + ",\n\nGood news! Your driver account has been activated by the administrator. You now have full access to the fleet management system.\n\nYou can log in using your credentials and resume your work with the fleet.\n\nIf you have any questions or need assistance, please contact your fleet administrator.\n\nBest regards,\nFleetFlow Team");
                 int modifiedRows = await _context.SaveChangesAsync();
                 if (modifiedRows == 0)
                     return StatusCode(500, "Failed to activate driver.");

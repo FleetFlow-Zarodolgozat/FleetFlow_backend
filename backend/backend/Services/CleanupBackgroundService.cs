@@ -39,7 +39,7 @@ namespace backend.Services
             var deletedUsers = await context.Users.Where(u => u.UpdatedAt < limitDate && u.IsActive == false).ToListAsync();
             if (deletedUsers.Count > 0)
             {
-                var driverIds = deletedUsers.Select(u => u.Driver!.Id).ToList();
+                var driverIds = deletedUsers.Where(u => u.Driver != null).Select(u => u.Driver!.Id).ToList();
                 var usersIds = deletedUsers.Select(u => u.Id).ToList();
                 var notifications = await context.Notifications.Where(n => usersIds.Contains(n.UserId)).ToListAsync();
                 context.Notifications.RemoveRange(notifications);
@@ -56,15 +56,7 @@ namespace backend.Services
                 var files = await context.Files.Where(f => usersIds.Contains(f.UploadedByUserId)).ToListAsync();
                 foreach (var f in files)
                 {
-                    var file = await context.Files.FindAsync(f.Id);
-                    if (file != null)
-                    {
-                        var storageRoot = Path.Combine(env.ContentRootPath, "storage");
-                        var path = Directory.GetFiles(storageRoot, file.StoredName, SearchOption.AllDirectories).FirstOrDefault();
-                        if (path != null)
-                            File.Delete(path);
-                        context.Files.Remove(file);
-                    }
+                    DeletePhysicalFile(env, f, context);
                 }
             }
             context.Users.RemoveRange(deletedUsers!);
@@ -83,27 +75,11 @@ namespace backend.Services
                 context.CalendarEvents.RemoveRange(calendarEvents);
                 foreach (var f in vehicleFuelLogs)
                 {
-                    var file = await context.Files.FindAsync(f.ReceiptFileId);
-                    if (file != null)
-                    {
-                        var storageRoot = Path.Combine(env.ContentRootPath, "storage");
-                        var path = Directory.GetFiles(storageRoot, file.StoredName, SearchOption.AllDirectories).FirstOrDefault();
-                        if (path != null)
-                            File.Delete(path);
-                        context.Files.Remove(file);
-                    }
+                    DeletePhysicalFile(env, f.ReceiptFile, context);
                 }
                 foreach (var s in vehicleServiceRequests)
                 {
-                    var file = await context.Files.FindAsync(s.InvoiceFileId);
-                    if (file != null)
-                    {
-                        var storageRoot = Path.Combine(env.ContentRootPath, "storage");
-                        var path = Directory.GetFiles(storageRoot, file.StoredName, SearchOption.AllDirectories).FirstOrDefault();
-                        if (path != null)
-                            File.Delete(path);
-                        context.Files.Remove(file);
-                    }
+                    DeletePhysicalFile(env, s.InvoiceFile, context);
                 }
             }
             context.Vehicles.RemoveRange(deletedVehicles);
@@ -115,36 +91,29 @@ namespace backend.Services
             context.CalendarEvents.RemoveRange(serviceRequestCalendarEvents);
             foreach (var s in deletedServiceRequests)
             {
-                var file = await context.Files.FindAsync(s.InvoiceFileId);
-                if (file != null)
-                {
-                    var storageRoot = Path.Combine(env.ContentRootPath, "storage");
-                    var path = Directory.GetFiles(storageRoot, file.StoredName, SearchOption.AllDirectories).FirstOrDefault();
-                    if (path != null)
-                        File.Delete(path);
-                    context.Files.Remove(file);
-                }
+                DeletePhysicalFile(env, s.InvoiceFile, context);
             }
             var deltedFuelLogs = await context.FuelLogs.Where(f => f.UpdatedAt < limitDate && f.IsDeleted == true).ToListAsync();
             context.FuelLogs.RemoveRange(deltedFuelLogs);
             foreach (var f in deltedFuelLogs)
             {
-                var file = await context.Files.FindAsync(f.ReceiptFileId);
-                if (file != null)
-                {
-                    var storageRoot = Path.Combine(env.ContentRootPath, "storage");
-                    var path = Directory.GetFiles(storageRoot, file.StoredName, SearchOption.AllDirectories).FirstOrDefault();
-                    if (path != null)
-                        File.Delete(path);
-                    context.Files.Remove(file);
-                }
+                DeletePhysicalFile(env, f.ReceiptFile, context);
             }
             var deletedTrips = await context.Trips.Where(t => t.UpdatedAt < limitDate && t.IsDeleted == true).ToListAsync();
             context.Trips.RemoveRange(deletedTrips);
             var oldNotifications = await context.Notifications.Where(n => n.CreatedAt < limitDate).ToListAsync();
             context.Notifications.RemoveRange(oldNotifications);
-            await context.SaveChangesAsync();
-            _logger.LogInformation("Cleanup executed at {time}", DateTime.UtcNow);
+            int deletedRows = await context.SaveChangesAsync();
+            _logger.LogInformation("Cleanup executed at {time}, deleted rows: {deletedRows}", DateTime.UtcNow, deletedRows);
+        }
+
+        private void DeletePhysicalFile(IWebHostEnvironment env, Models.File? file, FlottakezeloDbContext context)
+        {
+            var storageRoot = Path.Combine(env.ContentRootPath, "storage");
+            var path = Directory.GetFiles(storageRoot, file!.StoredName, SearchOption.AllDirectories).FirstOrDefault();
+            if (path != null)
+                File.Delete(path);
+            context.Files.Remove(file);
         }
     }
 }
