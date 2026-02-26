@@ -152,7 +152,7 @@ namespace backend.Controllers
                 var driver = await _context.Drivers.FirstOrDefaultAsync(x => x.UserId == userId);
                 if (driver == null)
                     return NotFound("Driver not found.");
-                var existingAssignment = await _context.VehicleAssignments.FirstOrDefaultAsync(va => va.DriverId == driver.Id && va.AssignedTo == null);
+                var existingAssignment = await _context.VehicleAssignments.Include(va => va.Vehicle).FirstOrDefaultAsync(va => va.DriverId == driver.Id && va.AssignedTo == null);
                 if (existingAssignment == null)
                     return BadRequest("No active assignment found for this driver and vehicle.");
                 existingAssignment.AssignedTo = DateTime.UtcNow;

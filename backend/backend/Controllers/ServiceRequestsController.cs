@@ -143,7 +143,7 @@ namespace backend.Controllers
                 var driver = await _context.Drivers.Include(x => x.User).FirstOrDefaultAsync(x => x.UserId == userId);
                 if (driver == null)
                     return Unauthorized("Driver profile not found");
-                var assignment = await _context.VehicleAssignments.Where(x => x.DriverId == driver.Id && x.AssignedTo == null).FirstOrDefaultAsync();
+                var assignment = await _context.VehicleAssignments.Include(va => va.Vehicle).Where(x => x.DriverId == driver.Id && x.AssignedTo == null).FirstOrDefaultAsync();
                 if (assignment == null)
                     return NotFound("No assigned vehicle found for the driver");
                 var vehicle = assignment.Vehicle;
@@ -197,7 +197,7 @@ namespace backend.Controllers
         {
             return await this.Run(async () =>
             {
-                var serviceRequest = await _context.ServiceRequests.FindAsync(id);
+                var serviceRequest = await _context.ServiceRequests.Include(sr => sr.Vehicle).FirstOrDefaultAsync(sr => sr.Id == id);
                 if (serviceRequest == null)
                     return NotFound("Service request not found");
                 if (serviceRequest.Status != "REQUESTED")
@@ -209,7 +209,8 @@ namespace backend.Controllers
                     serviceRequest.CreatedByDriverUserId,
                     "SERVICE_REQUEST",
                     "Service Request Rejected",
-                    $"Your service request '{serviceRequest.Title}' has been rejected by the admin. Note from admin: {note}"
+                    $"Your service request '{serviceRequest.Title}' has been rejected by the admin. Note from admin: {note}",
+                    serviceRequest.Id
                 );
                 serviceRequest.UpdatedAt = DateTime.UtcNow;
                 int updatedRows = await _context.SaveChangesAsync();
@@ -233,7 +234,7 @@ namespace backend.Controllers
                     return BadRequest("Scheduled start time cannot be in the past");
                 if (dto.ScheduledEnd != null && dto.ScheduledEnd <= dto.ScheduledStart)
                     return BadRequest("Scheduled end time must be after scheduled start time");
-                var serviceRequest = await _context.ServiceRequests.FindAsync(id);
+                var serviceRequest = await _context.ServiceRequests.Include(sr => sr.Vehicle).FirstOrDefaultAsync(sr => sr.Id == id);
                 if (serviceRequest == null)
                     return NotFound("Service request not found");
                 var vehicle = serviceRequest.Vehicle;
@@ -254,7 +255,8 @@ namespace backend.Controllers
                     serviceRequest.CreatedByDriverUserId,
                     "SERVICE_REQUEST",
                     "Service Request Approved",
-                    $"Your service request '{serviceRequest.Title}' has been approved by the admin. Scheduled start: {dto.ScheduledStart}, (Scheduled end: {dto.ScheduledEnd}), Service location: {dto.ServiceLocation}. Note from admin: {dto.AdminDecisionNote}"
+                    $"Your service request '{serviceRequest.Title}' has been approved by the admin. Scheduled start: {dto.ScheduledStart}, (Scheduled end: {dto.ScheduledEnd}), Service location: {dto.ServiceLocation}. Note from admin: {dto.AdminDecisionNote}",
+                    serviceRequest.Id
                 );
                 var calendarEvent = new CalendarEvent
                 {
@@ -287,7 +289,7 @@ namespace backend.Controllers
                 if (userIdClaim == null)
                     return Unauthorized();
                 ulong userId = ulong.Parse(userIdClaim);
-                var serviceRequest = await _context.ServiceRequests.FindAsync(id);
+                var serviceRequest = await _context.ServiceRequests.Include(sr => sr.Vehicle).FirstOrDefaultAsync(sr => sr.Id == id);
                 if (serviceRequest == null)
                     return NotFound("Service request not found");
                 if (serviceRequest.CreatedByDriverUserId != userId)
@@ -307,7 +309,8 @@ namespace backend.Controllers
                     serviceRequest.AdminUserId ?? 0,
                     "SERVICE_REQUEST",
                     "Service Request Details Uploaded",
-                    $"The driver has uploaded details for the service request '{serviceRequest.Title}'. Driver report cost: {dto.DriverReportCost}. Driver's note: {dto.DriverCloseNote}"
+                    $"The driver has uploaded details for the service request '{serviceRequest.Title}'. Driver report cost: {dto.DriverReportCost}. Driver's note: {dto.DriverCloseNote}",
+                    serviceRequest.Id
                 );
                 int updatedRows = await _context.SaveChangesAsync();
                 if (updatedRows == 0)
@@ -322,21 +325,21 @@ namespace backend.Controllers
         {
             return await this.Run(async () =>
             {
-                if (dto.DriverReportCost < 0)
+                if (dto.DriverReportCost.HasValue && dto.DriverReportCost.Value < 0)
                     return BadRequest("Driver report cost cannot be negative");
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (userIdClaim == null)
                     return Unauthorized();
                 ulong userId = ulong.Parse(userIdClaim);
-                var serviceRequest = await _context.ServiceRequests.FindAsync(id);
+                var serviceRequest = await _context.ServiceRequests.Include(sr => sr.Vehicle).FirstOrDefaultAsync(sr => sr.Id == id);
                 if (serviceRequest == null)
                     return NotFound("Service request not found");
                 if (serviceRequest.CreatedByDriverUserId != userId)
                     return Forbid("You are not the creator of this service request");
                 if (serviceRequest.Status != "DRIVER_COST")
                     return BadRequest("Only service requests with DRIVER_COST status can have details edited");
-                if (dto.DriverReportCost != 0)
-                    serviceRequest.DriverReportCost = dto.DriverReportCost;
+                if (dto.DriverReportCost.HasValue)
+                    serviceRequest.DriverReportCost = dto.DriverReportCost.Value;
                 if (dto.File != null)
                 {
                     if (serviceRequest.InvoiceFileId != null)
@@ -351,7 +354,10 @@ namespace backend.Controllers
                     serviceRequest.AdminUserId ?? 0,
                     "SERVICE_REQUEST",
                     "Service Request Details Edited",
-                    $"The driver has edited the uploaded details for the service request '{serviceRequest.Title}'. Driver report cost: {dto.DriverReportCost}. Driver's note: {dto.DriverCloseNote}"
+                    $"The driver has edited the uploaded details for the service request '{serviceRequest.Title}'." + 
+                    (dto.DriverReportCost.HasValue ? $" Driver report cost: {dto.DriverReportCost.Value}." : "") + 
+                    (dto.DriverCloseNote != null ? $" Driver's note: {dto.DriverCloseNote}" : ""),
+                    serviceRequest.Id
                 );
                 int updatedRows = await _context.SaveChangesAsync();
                 if (updatedRows == 0)
@@ -370,7 +376,7 @@ namespace backend.Controllers
                 if (userIdClaim == null)
                     return Unauthorized();
                 ulong userId = ulong.Parse(userIdClaim);
-                var serviceRequest = await _context.ServiceRequests.FindAsync(id);
+                var serviceRequest = await _context.ServiceRequests.Include(sr => sr.Vehicle).FirstOrDefaultAsync(sr => sr.Id == id);
                 if (serviceRequest == null)
                     return NotFound("Service request not found");
                 if (serviceRequest.Status != "DRIVER_COST")
@@ -386,7 +392,8 @@ namespace backend.Controllers
                     serviceRequest.CreatedByDriverUserId,
                     "SERVICE_REQUEST",
                     "Service Request Closed",
-                    $"Your service request '{serviceRequest.Title}' has been closed by the admin"
+                    $"Your service request '{serviceRequest.Title}' has been closed by the admin",
+                    serviceRequest.Id
                 );
                 int updatedRows = await _context.SaveChangesAsync();
                 if (updatedRows == 0)

@@ -29,31 +29,17 @@ namespace backend.Controllers
         {
             return await this.Run(async () =>
             {
-                var tripsQuery = _context.Trips.AsNoTracking().Include(x => x.Driver).Select(v => new TripDto
-                {
-                    Id = v.Id,
-                    UserEmail = v.Driver.User.Email,
-                    LicensePlate = v.Vehicle.LicensePlate,
-                    IsDeleted = v.IsDeleted,
-                    StartTime = v.StartTime,
-                    Long = v.EndTime - v.StartTime,
-                    StartLocation = v.StartLocation,
-                    EndLocation = v.EndLocation,
-                    DistanceKm = v.DistanceKm,
-                    Notes = v.Notes,
-                    ProfileImgFileId = v.Driver.User.ProfileImgFileId
-                });
+                IQueryable<Trip> tripsQuery = _context.Trips.AsNoTracking().Include(x => x.Driver).ThenInclude(d => d.User).Include(x => x.Vehicle);
                 var q = query.StringQ?.Trim();
                 if (!string.IsNullOrWhiteSpace(q))
                 {
                     tripsQuery = tripsQuery.Where(x =>
-                        x.LicensePlate.Contains(q) ||
-                        x.UserEmail.Contains(q) ||
-                        x.StartLocation!.Contains(q) ||
-                        x.EndLocation!.Contains(q) ||
+                        x.Vehicle.LicensePlate.Contains(q) ||
+                        x.Driver.User.Email.Contains(q) ||
+                        (x.StartLocation != null && x.StartLocation.Contains(q)) ||
+                        (x.EndLocation != null && x.EndLocation.Contains(q)) ||
                         (x.Notes != null && x.Notes.Contains(q)) ||
                         x.DistanceKm.ToString()!.Contains(q) ||
-                        x.Long.ToString()!.Contains(q) ||
                         x.StartTime.ToString().Contains(q)
                     );
                 }
@@ -64,8 +50,6 @@ namespace backend.Controllers
                 var totalCount = await tripsQuery.CountAsync();
                 tripsQuery = (query.Ordering?.ToLower()) switch
                 {
-                    "long" => tripsQuery.OrderBy(x => x.Long),
-                    "long_desc" => tripsQuery.OrderByDescending(x => x.Long),
                     "distance" => tripsQuery.OrderBy(x => x.DistanceKm),
                     "distance_desc" => tripsQuery.OrderByDescending(x => x.DistanceKm),
                     "starttime" => tripsQuery.OrderBy(x => x.StartTime),
@@ -74,7 +58,21 @@ namespace backend.Controllers
                 };
                 var page = query.Page < 1 ? 1 : query.Page;
                 var pageSize = query.PageSize < 1 ? 25 : Math.Min(query.PageSize, 200);
-                var trips = await tripsQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+                var tripsData = await tripsQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+                var trips = tripsData.Select(v => new TripDto
+                {
+                    Id = v.Id,
+                    UserEmail = v.Driver.User.Email,
+                    LicensePlate = v.Vehicle.LicensePlate,
+                    IsDeleted = v.IsDeleted,
+                    StartTime = v.StartTime,
+                    Long = v.EndTime.HasValue ? v.EndTime.Value - v.StartTime : (TimeSpan?)null,
+                    StartLocation = v.StartLocation,
+                    EndLocation = v.EndLocation,
+                    DistanceKm = v.DistanceKm,
+                    Notes = v.Notes,
+                    ProfileImgFileId = v.Driver.User.ProfileImgFileId
+                }).ToList();
                 return Ok(new
                 {
                     totalCount,
@@ -95,23 +93,24 @@ namespace backend.Controllers
                 if (userIdClaim == null)
                     return Unauthorized();
                 ulong userId = ulong.Parse(userIdClaim);
-                var tripsQuery = _context.Trips.AsNoTracking().Where(x => x.Driver.UserId == userId).OrderByDescending(x => x.StartTime).Select(v => new TripDto
+                var tripsQuery = _context.Trips.AsNoTracking().Include(x => x.Driver).ThenInclude(d => d.User).Include(x => x.Vehicle).Where(x => x.Driver.UserId == userId && x.IsDeleted == false).OrderByDescending(x => x.StartTime);
+                var totalCount = await tripsQuery.CountAsync();
+                var page = query.Page < 1 ? 1 : query.Page;
+                var pageSize = query.PageSize < 1 ? 25 : Math.Min(query.PageSize, 200);
+                var tripsData = await tripsQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+                var trips = tripsData.Select(v => new TripDto
                 {
                     Id = v.Id,
                     UserEmail = v.Driver.User.Email,
                     LicensePlate = v.Vehicle.LicensePlate,
                     IsDeleted = v.IsDeleted,
                     StartTime = v.StartTime,
-                    Long = v.EndTime - v.StartTime,
+                    Long = v.EndTime.HasValue ? v.EndTime.Value - v.StartTime : (TimeSpan?)null,
                     StartLocation = v.StartLocation,
                     EndLocation = v.EndLocation,
                     DistanceKm = v.DistanceKm,
                     Notes = v.Notes
-                });
-                var totalCount = await tripsQuery.CountAsync();
-                var page = query.Page < 1 ? 1 : query.Page;
-                var pageSize = query.PageSize < 1 ? 25 : Math.Min(query.PageSize, 200);
-                var trips = await tripsQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+                }).ToList();
                 return Ok(new
                 {
                     totalCount,
@@ -135,9 +134,11 @@ namespace backend.Controllers
                 var user = await _context.Users.FindAsync(userId);
                 if (user == null)
                     return NotFound("User not found");
-                var trip = await _context.Trips.FindAsync(id);
+                var trip = await _context.Trips.Include(t => t.Driver).FirstOrDefaultAsync(t => t.Id == id);
                 if (trip == null)
                     return NotFound("Trip not found");
+                if (trip.Driver == null)
+                    return StatusCode(500, "Trip data is inconsistent");
                 if (user.Role == "DRIVER" && trip.Driver.UserId != userId)
                     return Forbid("You are not the creator of this trip");
                 if (user.Role == "DRIVER" && trip.CreatedAt.AddHours(24) < DateTime.UtcNow)
@@ -166,9 +167,11 @@ namespace backend.Controllers
         {
             return await this.Run(async () =>
             {
-                var trip = await _context.Trips.FindAsync(id);
+                var trip = await _context.Trips.Include(t => t.Driver).FirstOrDefaultAsync(t => t.Id == id);
                 if (trip == null)
                     return NotFound("Trip not found");
+                if (trip.Driver == null)
+                    return StatusCode(500, "Trip data is inconsistent");
                 trip.IsDeleted = false;
                 trip.UpdatedAt = DateTime.UtcNow;
                 await _notificationService.CreateAsync(
@@ -206,10 +209,12 @@ namespace backend.Controllers
                     return BadRequest("Distance cannot be negative");
                 if (dto.StartOdometerKm > dto.EndOdometerKm)
                     return BadRequest("Start odometer cannot be greater than end odometer");
-                var user = await _context.Users.FindAsync(userId);
+                var user = await _context.Users.Include(u => u.Driver).FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                     return NotFound("User not found");
-                var assignment = await _context.VehicleAssignments.Where(x => x.DriverId == user.Driver!.Id && x.AssignedTo == null).FirstOrDefaultAsync();
+                if (user.Driver == null)
+                    return NotFound("Driver profile not found");
+                var assignment = await _context.VehicleAssignments.Include(va => va.Vehicle).Where(x => x.DriverId == user.Driver.Id && x.AssignedTo == null).FirstOrDefaultAsync();
                 if (assignment == null)
                     return NotFound("No assigned vehicle found for the driver");
                 var vehicle = assignment.Vehicle;
@@ -219,7 +224,7 @@ namespace backend.Controllers
                     return BadRequest("Start odometer cannot be greater than vehicle's current mileage");
                 var trip = new Trip
                 {
-                    DriverId = user.Driver!.Id,
+                    DriverId = user.Driver.Id,
                     VehicleId = vehicle.Id,
                     StartTime = dto.StartTime,
                     EndTime = dto.EndTime,

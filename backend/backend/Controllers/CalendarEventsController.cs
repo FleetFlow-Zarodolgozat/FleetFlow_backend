@@ -30,6 +30,7 @@ namespace backend.Controllers
                 ulong userId = ulong.Parse(userIdClaim);
                 var calendarEvents = await _context.CalendarEvents.AsNoTracking().Where(x => x.OwnerUserId == userId).Select(x => new CalendarEventDto
                 {
+                    Id = x.Id,
                     EventType = x.EventType,
                     Title = x.Title,
                     Description = x.Description,
