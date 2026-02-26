@@ -9,10 +9,11 @@ USE flottakezelo_db
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   email VARCHAR(255) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NULL,
   role ENUM('ADMIN','DRIVER') NOT NULL,
   full_name VARCHAR(255) NOT NULL,
   phone VARCHAR(50) NULL,
+  profile_img_file_id BIGINT UNSIGNED NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -110,11 +111,12 @@ CREATE TABLE IF NOT EXISTS fuel_logs (
   odometer_km INT NULL,
   liters DECIMAL(10,2) NOT NULL,
   total_cost DECIMAL(10,2) NOT NULL,
-  currency CHAR(3) NOT NULL DEFAULT 'HUF',
   station_name VARCHAR(255) NULL,
   location_text VARCHAR(255) NULL,
   receipt_file_id BIGINT UNSIGNED NULL,
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY ix_fuel_vehicle_date (vehicle_id, date),
   KEY ix_fuel_driver_date (driver_id, date),
@@ -147,9 +149,10 @@ CREATE TABLE IF NOT EXISTS trips (
   distance_km DECIMAL(10,2) NULL,
   start_odometer_km INT NULL,
   end_odometer_km INT NULL,
-  purpose VARCHAR(120) NULL,
   notes TEXT NULL,
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY ix_trips_vehicle_start (vehicle_id, start_time),
   KEY ix_trips_driver_start (driver_id, start_time),
@@ -175,14 +178,12 @@ CREATE TABLE IF NOT EXISTS service_requests (
 
   title VARCHAR(120) NOT NULL,
   description TEXT NULL,
-  priority ENUM('LOW','MEDIUM','HIGH') NOT NULL DEFAULT 'MEDIUM',
 
   status ENUM(
     'REQUESTED',
     'REJECTED',
     'APPROVED',
-    'SCHEDULED',
-    'WAITING_DRIVER_COST',
+    'DRIVER_COST',
     'CLOSED'
   ) NOT NULL DEFAULT 'REQUESTED',
 
@@ -193,10 +194,7 @@ CREATE TABLE IF NOT EXISTS service_requests (
   scheduled_end DATETIME NULL,
   service_location VARCHAR(255) NULL,
 
-  completed_at DATETIME NULL,
-
   driver_report_cost DECIMAL(10,2) NULL,
-  driver_report_currency CHAR(3) NOT NULL DEFAULT 'HUF',
   invoice_file_id BIGINT UNSIGNED NULL,
   driver_close_note TEXT NULL,
 
@@ -240,15 +238,13 @@ CREATE TABLE IF NOT EXISTS calendar_events (
   owner_user_id BIGINT UNSIGNED NOT NULL,
   created_by_user_id BIGINT UNSIGNED NOT NULL,
 
-  event_type ENUM('PERSONAL_TASK','ADMIN_TASK','SERVICE_APPOINTMENT') NOT NULL,
+  event_type ENUM('PERSONAL_TASK','SERVICE_APPOINTMENT') NOT NULL,
 
   title VARCHAR(160) NOT NULL,
   description TEXT NULL,
 
   start_at DATETIME NOT NULL,
   end_at DATETIME NULL,
-
-  status ENUM('PLANNED','DONE','CANCELLED') NOT NULL DEFAULT 'PLANNED',
 
   related_service_request_id BIGINT UNSIGNED NULL,
 
@@ -279,7 +275,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,
 
-  type VARCHAR(50) NOT NULL,
+  type ENUM('ACCOUNT','ASSIGNMENT','FUEL_LOG','SERVICE_REQUEST','TRIP') NOT NULL,
   title VARCHAR(160) NOT NULL,
   message TEXT NOT NULL,
 
@@ -301,4 +297,24 @@ CREATE TABLE IF NOT EXISTS notifications (
     ON DELETE SET NULL
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------
+-- 11) PASSWORD_TOKEN
+-- -------------------------
+CREATE TABLE password_tokens (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+  user_id BIGINT UNSIGNED NOT NULL,
+
+  token_hash VARCHAR(255) NOT NULL,
+  expires_at DATETIME NOT NULL,
+
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_pt_user
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE
+);
+
 

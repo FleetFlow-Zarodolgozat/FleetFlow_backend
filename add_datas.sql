@@ -2,9 +2,9 @@ USE flottakezelo_db
 
 INSERT INTO users (id, email, password_hash, role, full_name, phone)
 VALUES
-(1, 'admin@flotta.hu', '$2a$12$ZReM2RxbxU0BuNOvuEBYnuZxNoNoSCFW1Z.b6mvdk4TEaqsR3M1fW', 'ADMIN', 'Kovács Admin', '0612345678'),
-(2, 'sofor1@flotta.hu', '$2a$12$0k.zHoA/VI3MvqKEeV8saOoVv4Yvqdg7gnRxCFbGw625iGCz5i/iG', 'DRIVER', 'Nagy Péter', '0620123456'),
-(3, 'sofor2@flotta.hu', '$2a$12$p9wqqTaN3qxSr8mrDzVe3OzRqba/.JJnC26GDpXkwKQNtfRqEtOVC', 'DRIVER', 'Kiss Gábor', '0630123456');
+(1, 'admin@flotta.hu', '$2a$12$ADoEtTBTpCPJitxdXPoU.O4TNqVscQvUmSbOh43Iu30ajF9ss3pFa', 'ADMIN', 'Kovács Admin', '0612345678'),
+(2, 'sofor1@flotta.hu', '$2a$12$DKrzVcaBKY3RYpC8TK6E5u9Q5TPIwNfRzx3r5/t25VuRM70d8dKPu', 'DRIVER', 'Nagy Péter', '0620123456'),
+(3, 'sofor2@flotta.hu', '$2a$12$DKrzVcaBKY3RYpC8TK6E5u9Q5TPIwNfRzx3r5/t25VuRM70d8dKPu', 'DRIVER', 'Kiss Gábor', '0630123456');
 
 INSERT INTO drivers (id, user_id, license_number, license_expiry_date)
 VALUES
@@ -33,15 +33,15 @@ VALUES
 (2, 2, '2025-01-12 17:10:00', 41000, 38.2, 25800, 'MOL Budapest', NULL);
 
 INSERT INTO trips
-(vehicle_id, driver_id, start_time, end_time, start_location, end_location, distance_km, purpose)
+(vehicle_id, driver_id, start_time, end_time, start_location, end_location, distance_km)
 VALUES
-(1, 1, '2025-01-10 09:00:00', '2025-01-10 11:00:00', 'Győr', 'Budapest', 121.5, 'Ügyféllátogatás'),
-(2, 2, '2025-01-12 18:00:00', '2025-01-12 20:00:00', 'Budapest', 'Székesfehérvár', 64.3, 'Áruszállítás');
+(1, 1, '2025-01-10 09:00:00', '2025-01-10 11:00:00', 'Győr', 'Budapest', 121.5),
+(2, 2, '2025-01-12 18:00:00', '2025-01-12 20:00:00', 'Budapest', 'Székesfehérvár', 64.3);
 
 INSERT INTO service_requests
 (
   id, vehicle_id, driver_id, created_by_driver_user_id,
-  title, description, priority, status,
+  title, description, status,
   admin_user_id,
   scheduled_start, scheduled_end,
   service_location,
@@ -53,8 +53,7 @@ VALUES
   1, 1, 1, 2,
   'Fékek ellenőrzése',
   'Fékezésnél furcsa hang hallható',
-  'HIGH',
-  'SCHEDULED',
+  'DRIVER_COST',
   1,
   '2025-01-20 09:00:00',
   '2025-01-20 11:00:00',
@@ -73,5 +72,4 @@ INSERT INTO notifications
 VALUES
 (2, 'SERVICE_APPROVED', 'Szerviz jóváhagyva', 'A szerviz időpontja rögzítve lett.', 1),
 (1, 'SERVICE_CREATED', 'Új szerviz igény', 'Új szerviz igény érkezett egy járműhöz.', 1);
-
 
