@@ -22,12 +22,14 @@ namespace backend.Controllers
         private readonly INotificationService _notificationService;
         private readonly IEmailService _emailService;
         private readonly ITokenService _tokenService;
-        public AdminDriversController(FlottakezeloDbContext context, INotificationService notificationService, IEmailService emailService, ITokenService tokenService)
+        private readonly IConfiguration _configuration;
+        public AdminDriversController(FlottakezeloDbContext context, INotificationService notificationService, IEmailService emailService, ITokenService tokenService, IConfiguration configuration)
         {
             _context = context;
             _notificationService = notificationService;
             _emailService = emailService;
             _tokenService = tokenService;
+            _configuration = configuration;
         }
 
         [HttpGet]
@@ -184,13 +186,13 @@ namespace backend.Controllers
                     "Driver Account Created",
                     "Your driver account has been created by the administrator. You can now log in and start using the fleet management system."
                 );
-                var link = $"http://localhost:3000/api/profile/set-password?token={rawToken}";
+                int createdDriver = await _context.SaveChangesAsync();
+                var link = $"{_configuration.GetSection("Frontend")["BaseUrl"]}/profile/set-password?token={rawToken}";
                 await _emailService.SendAsync(
                     newUser.Email,
                     "Welcome to FleetFlow - Set Your Password",
                     $"Dear {newUser.FullName},\n\nYour driver account has been created by the administrator. Welcome to the FleetFlow fleet management system!\n\nTo get started, please set your password by clicking the link below:\n\n{link}\n\nThis link will expire in 24 hours. After setting your password, you will be able to log in and access all the features of the system.\n\nIf you have any questions or need assistance, please contact your fleet administrator.\n\nBest regards,\nFleetFlow Team"
                 );
-                int createdDriver = await _context.SaveChangesAsync();
                 if (createdUser == 0 || createdDriver == 0)
                     return StatusCode(500, "Failed to create driver.");
                 return StatusCode(201, $"Driver created successfully. Id: {newUser.Id}");
