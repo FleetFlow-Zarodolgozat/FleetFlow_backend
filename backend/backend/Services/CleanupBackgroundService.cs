@@ -51,6 +51,10 @@ namespace backend.Services
                 context.ServiceRequests.RemoveRange(usersServiceRequests);
                 var calendarEvents = await context.CalendarEvents.Where(c => usersIds.Contains(c.OwnerUserId) || usersIds.Contains(c.CreatedByUserId)).ToListAsync();
                 context.CalendarEvents.RemoveRange(calendarEvents);
+                var passwordTokens = await context.PasswordTokens.Where(p => usersIds.Contains(p.UserId)).ToListAsync();
+                context.PasswordTokens.RemoveRange(passwordTokens);
+                var driverAssignments = await context.VehicleAssignments.Where(a => driverIds.Contains(a.DriverId)).ToListAsync();
+                context.VehicleAssignments.RemoveRange(driverAssignments);
                 var drivers = await context.Drivers.Where(d => driverIds.Contains(d.Id)).ToListAsync();
                 context.Drivers.RemoveRange(drivers);
                 var files = await context.Files.Where(f => usersIds.Contains(f.UploadedByUserId)).ToListAsync();
@@ -73,6 +77,8 @@ namespace backend.Services
                 context.FuelLogs.RemoveRange(vehicleFuelLogs);
                 var calendarEvents = await context.CalendarEvents.Where(c => c.RelatedServiceRequestId != null && vehicleServiceRequests.Select(s => s.Id).Contains(c.RelatedServiceRequestId.Value)).ToListAsync();
                 context.CalendarEvents.RemoveRange(calendarEvents);
+                var vehicleAssignments = await context.VehicleAssignments.Where(a => vehicleIds.Contains(a.VehicleId)).ToListAsync();
+                context.VehicleAssignments.RemoveRange(vehicleAssignments);
                 foreach (var f in vehicleFuelLogs)
                 {
                     DeletePhysicalFile(env, f.ReceiptFile, context);

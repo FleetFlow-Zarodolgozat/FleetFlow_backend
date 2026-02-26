@@ -66,8 +66,6 @@ namespace backend.Controllers
                     servicesQuery = servicesQuery.Where(x => x.Status == "APPROVED");
                 else if (query.Status == "DRIVER_COST")
                     servicesQuery = servicesQuery.Where(x => x.Status == "DRIVER_COST");
-                else if (query.Status == "REQUESTED_EDIT")
-                    servicesQuery = servicesQuery.Where(x => x.Status == "REQUESTED_EDIT");
                 else if (query.Status == "CLOSED")
                     servicesQuery = servicesQuery.Where(x => x.Status == "CLOSED");
                 var totalCount = await servicesQuery.CountAsync();

@@ -287,7 +287,7 @@ public partial class FlottakezeloDbContext : DbContext
                 .HasMaxLength(160)
                 .HasColumnName("title");
             entity.Property(e => e.Type)
-                .HasMaxLength(50)
+                .HasColumnType("enum('ACCOUNT','ASSIGNMENT','FUEL_LOG','SERVICE_REQUEST','TRIP')")
                 .HasColumnName("type");
             entity.Property(e => e.UserId)
                 .HasColumnType("bigint(20) unsigned")
@@ -324,7 +324,6 @@ public partial class FlottakezeloDbContext : DbContext
             entity.Property(e => e.TokenHash)
                 .HasMaxLength(255)
                 .HasColumnName("token_hash");
-            entity.Property(e => e.Used).HasColumnName("used");
             entity.Property(e => e.UserId)
                 .HasColumnType("bigint(20) unsigned")
                 .HasColumnName("user_id");
