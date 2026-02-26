@@ -176,7 +176,7 @@ namespace backend.Controllers
                     vehicle.Brand = dto.Brand;
                 if (!string.IsNullOrEmpty(dto.Model))
                     vehicle.Model = dto.Model;
-                if (dto.Year != 0)
+                if (dto.Year > 0)
                     vehicle.Year = dto.Year;
                 if (dto.CurrentMileageKm != 0)
                     vehicle.CurrentMileageKm = dto.CurrentMileageKm;

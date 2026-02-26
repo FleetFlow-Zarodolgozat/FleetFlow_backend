@@ -41,7 +41,7 @@ namespace backend.Controllers
                 if (userIdClaim == null)
                     return Unauthorized();
                 ulong userId = ulong.Parse(userIdClaim);
-                var user = await _context.Users.FindAsync(userId);
+                var user = await _context.Users.Include(u => u.Driver).FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                     return NotFound("User not found");
                 if (user.Role == "ADMIN")
@@ -81,10 +81,12 @@ namespace backend.Controllers
                 if (userIdClaim == null)
                     return Unauthorized();
                 ulong userId = ulong.Parse(userIdClaim);
-                var user = await _context.Users.FindAsync(userId);
+                var user = await _context.Users.Include(u => u.Driver).FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                     return NotFound("User not found");
-                var assignment = await _context.VehicleAssignments.Where(x => x.DriverId == user.Driver!.Id && x.AssignedTo == null).FirstOrDefaultAsync();
+                if (user.Driver == null)
+                    return NotFound("Driver profile not found");
+                var assignment = await _context.VehicleAssignments.Include(va => va.Vehicle).Where(x => x.DriverId == user.Driver.Id && x.AssignedTo == null).FirstOrDefaultAsync();
                 if (assignment == null)
                     return NotFound("No assigned vehicle found for the driver");
                 var vehicle = assignment.Vehicle;
@@ -110,7 +112,7 @@ namespace backend.Controllers
                 if (userIdClaim == null)
                     return Unauthorized();
                 ulong userId = ulong.Parse(userIdClaim);
-                var user = await _context.Users.FindAsync(userId);
+                var user = await _context.Users.Include(u => u.Driver).FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                     return NotFound("User not found");
                 if (!string.IsNullOrEmpty(dto.FullName))
@@ -146,11 +148,13 @@ namespace backend.Controllers
             if (user == null)
                 return Ok();
             var rawToken = _tokenService.GenerateSecureToken();
+            var now = DateTime.Now;
             _context.PasswordTokens.Add(new PasswordToken
             {
                 UserId = user.Id,
                 TokenHash = BCrypt.Net.BCrypt.HashPassword(rawToken),
-                ExpiresAt = DateTime.UtcNow.AddHours(1)
+                CreatedAt = now,
+                ExpiresAt = now.AddHours(1)
             });
             await _context.SaveChangesAsync();
             var link = $"{_configuration.GetSection("Frontend")["BaseUrl"]}/profile/set-password?token={rawToken}";
@@ -169,7 +173,7 @@ namespace backend.Controllers
             if (dto.Password != dto.ConfirmPassword)
                 return BadRequest("Passwords mismatch");
             var tokens = await _context.PasswordTokens.Include(t => t.User).ToListAsync();
-            var token = tokens.FirstOrDefault(t => BCrypt.Net.BCrypt.Verify(dto.Token, t.TokenHash) && t.ExpiresAt > DateTime.UtcNow);
+            var token = tokens.FirstOrDefault(t => BCrypt.Net.BCrypt.Verify(dto.Token, t.TokenHash) && t.ExpiresAt > DateTime.Now);
             if (token == null)
                 return BadRequest("Invalid token");
             token.User.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);

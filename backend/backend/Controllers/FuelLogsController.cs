@@ -92,7 +92,7 @@ namespace backend.Controllers
                 if (userIdClaim == null)
                     return Unauthorized();
                 ulong userId = ulong.Parse(userIdClaim);
-                var fuellogsQuery = _context.FuelLogs.AsNoTracking().Where(x => x.Driver.UserId == userId).OrderByDescending(x => x.Date).Select(v => new FuelLogDto
+                var fuellogsQuery = _context.FuelLogs.AsNoTracking().Where(x => x.Driver.UserId == userId && x.IsDeleted == false).OrderByDescending(x => x.Date).Select(v => new FuelLogDto
                 {
                     Id = v.Id,
                     Date = v.Date,
@@ -131,9 +131,11 @@ namespace backend.Controllers
                 var user = await _context.Users.FindAsync(userId);
                 if (user == null)
                     return NotFound("User not found");
-                var fuellog = await _context.FuelLogs.FindAsync(id);
+                var fuellog = await _context.FuelLogs.Include(f => f.Driver).FirstOrDefaultAsync(f => f.Id == id);
                 if (fuellog == null)
                     return NotFound("Fuellog not found");
+                if (fuellog.Driver == null)
+                    return StatusCode(500, "Fuel log data is inconsistent");
                 if (user.Role == "DRIVER" && fuellog.Driver.UserId != userId)
                     return Forbid("You are not the creator of this fuel log");
                 if (user.Role == "DRIVER" && fuellog.CreatedAt.AddHours(24) < DateTime.UtcNow)
@@ -162,9 +164,11 @@ namespace backend.Controllers
         {
             return await this.Run(async () =>
             {
-                var fuellog = await _context.FuelLogs.FindAsync(id);
+                var fuellog = await _context.FuelLogs.Include(f => f.Driver).FirstOrDefaultAsync(f => f.Id == id);
                 if (fuellog == null)
                     return NotFound("Fuellog not found");
+                if (fuellog.Driver == null)
+                    return StatusCode(500, "Fuel log data is inconsistent");
                 fuellog.IsDeleted = false;
                 fuellog.UpdatedAt = DateTime.UtcNow;
                 await _notificationService.CreateAsync(
@@ -198,10 +202,10 @@ namespace backend.Controllers
                     return BadRequest("Date cannot be in the future");
                 if (createFuelLogDto.Date < DateTime.UtcNow.AddDays(-7))
                     return BadRequest("Date cannot be older than 7 days");
-                var user = await _context.Users.FindAsync(userId);
+                var user = await _context.Users.Include(u => u.Driver).FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                     return NotFound("User not found");
-                var assignment = await _context.VehicleAssignments.Where(x => x.DriverId == user.Driver!.Id && x.AssignedTo == null).FirstOrDefaultAsync();
+                var assignment = await _context.VehicleAssignments.Include(va => va.Vehicle).Where(x => x.DriverId == user.Driver!.Id && x.AssignedTo == null).FirstOrDefaultAsync();
                 if (assignment == null)
                     return NotFound("No assigned vehicle found for the driver");
                 var vehicle = assignment.Vehicle;
