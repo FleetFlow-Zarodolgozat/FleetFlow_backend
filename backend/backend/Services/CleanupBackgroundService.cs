@@ -103,6 +103,10 @@ namespace backend.Services
             context.Trips.RemoveRange(deletedTrips);
             var oldNotifications = await context.Notifications.Where(n => n.CreatedAt < limitDate).ToListAsync();
             context.Notifications.RemoveRange(oldNotifications);
+            var oldPasswordResetTokens = await context.PasswordTokens.Where(p => p.CreatedAt < limitDate).ToListAsync();
+            context.PasswordTokens.RemoveRange(oldPasswordResetTokens);
+            var oldCalendarEvents = await context.CalendarEvents.Where(c => c.CreatedAt < DateTime.UtcNow.AddMonths(-18)).ToListAsync();
+            context.CalendarEvents.RemoveRange(oldCalendarEvents);
             int deletedRows = await context.SaveChangesAsync();
             _logger.LogInformation("Cleanup executed at {time}, deleted rows: {deletedRows}", DateTime.UtcNow, deletedRows);
         }

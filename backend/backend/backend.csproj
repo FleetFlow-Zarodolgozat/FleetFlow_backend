@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Uploads\**" />
+    <Content Remove="Uploads\**" />
+    <EmbeddedResource Remove="Uploads\**" />
+    <None Remove="Uploads\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.1">
@@ -16,11 +23,6 @@
     <PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.1" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Uploads\Fuellogs\" />
-    <Folder Include="Uploads\ProfilePictures\" />
   </ItemGroup>
 
 </Project>

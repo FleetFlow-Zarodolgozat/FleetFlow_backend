@@ -21,12 +21,14 @@ namespace backend.Controllers
         private readonly IFileService _fileService;
         private readonly ITokenService _tokenService;
         private readonly IEmailService _emailService;
-        public OwnDataController(FlottakezeloDbContext context, IFileService fileService, ITokenService tokenService, IEmailService emailService)
+        private readonly IConfiguration _configuration;
+        public OwnDataController(FlottakezeloDbContext context, IFileService fileService, ITokenService tokenService, IEmailService emailService, IConfiguration configuration)
         {
             _context = context;
             _fileService = fileService;
             _tokenService = tokenService;
             _emailService = emailService;
+            _configuration = configuration;
         }
 
         [HttpGet("mine")]
@@ -151,7 +153,7 @@ namespace backend.Controllers
                 ExpiresAt = DateTime.UtcNow.AddHours(1)
             });
             await _context.SaveChangesAsync();
-            var link = $"http://localhost:3000/api/profile/set-password?token={rawToken}";
+            var link = $"{_configuration.GetSection("Frontend")["BaseUrl"]}/profile/set-password?token={rawToken}";
             await _emailService.SendAsync(
                 user.Email,
                 "Jelszó visszaállítás",

@@ -7,13 +7,16 @@ namespace backend;
 
 public partial class FlottakezeloDbContext : DbContext
 {
-    public FlottakezeloDbContext()
+    private readonly IConfiguration _configuration;
+    public FlottakezeloDbContext(IConfiguration configuration)
     {
+        _configuration = configuration;
     }
 
-    public FlottakezeloDbContext(DbContextOptions<FlottakezeloDbContext> options)
+    public FlottakezeloDbContext(DbContextOptions<FlottakezeloDbContext> options, IConfiguration configuration)
         : base(options)
     {
+        _configuration = configuration;
     }
 
     public virtual DbSet<CalendarEvent> CalendarEvents { get; set; }
@@ -39,8 +42,7 @@ public partial class FlottakezeloDbContext : DbContext
     public virtual DbSet<VehicleAssignment> VehicleAssignments { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseMySQL("Server=localhost;Database=flottakezelo_db;Uid=root;Pwd=;");
+        => optionsBuilder.UseMySQL(_configuration.GetSection("ConnectionStrings")["DefaultConnection"]!);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
