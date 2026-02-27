@@ -42,7 +42,12 @@ public partial class FlottakezeloDbContext : DbContext
     public virtual DbSet<VehicleAssignment> VehicleAssignments { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseMySQL(_configuration.GetSection("ConnectionStrings")["DefaultConnection"]!);
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseMySQL(_configuration.GetSection("ConnectionStrings")["DefaultConnection"]!);
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

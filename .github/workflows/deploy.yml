@@ -55,3 +55,6 @@ jobs:
       - name: Deploy with env substitution
         run: |
           envsubst '$DB_CONNECTION_STRING $JWT_KEY $EMAIL_USERNAME $EMAIL_PASSWORD $FRONTEND_BASE_URL' < backend/backend/deployment.yaml | kubectl apply -f -
+
+      - name: Force rollout restart
+        run: kubectl rollout restart deployment/fleetflow-api-deployment
