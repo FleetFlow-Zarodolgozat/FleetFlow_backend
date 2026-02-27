@@ -16,8 +16,21 @@ spec:
       containers:
         - name: fleetflow-api
           image: ghcr.io/fleetflow-zarodolgozat/fleetflow-backend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
           env:
             - name: ASPNETCORE_ENVIRONMENT
               value: "Production"

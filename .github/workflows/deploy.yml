@@ -54,4 +54,4 @@ jobs:
 
       - name: Deploy with env substitution
         run: |
-          envsubst < backend/backend/deployment.yaml | kubectl apply -f -
+          envsubst '$DB_CONNECTION_STRING $JWT_KEY $EMAIL_USERNAME $EMAIL_PASSWORD $FRONTEND_BASE_URL' < backend/backend/deployment.yaml | kubectl apply -f -
