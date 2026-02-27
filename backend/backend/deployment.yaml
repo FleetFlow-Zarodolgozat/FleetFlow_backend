@@ -85,7 +85,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: fleetflow-ressdominik.jcloud.jedlik.cloud
+    - host: fleetflow-zarodolgozat-backend-ressdominik.jcloud.jedlik.cloud
       http:
         paths:
           - path: /
