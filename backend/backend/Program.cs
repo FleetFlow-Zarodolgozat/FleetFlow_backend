@@ -45,7 +45,7 @@ namespace backend
                     Scheme = "bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Írd be így: Bearer {token}"
+                    Description = "ï¿½rd be ï¿½gy: Bearer {token}"
                 });
 
                 options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -102,6 +102,8 @@ namespace backend
             app.UseAuthorization();
 
             app.MapControllers();
+
+            app.MapGet("/healthz", () => Results.Ok("Healthy"));
 
             app.Run();
         }
