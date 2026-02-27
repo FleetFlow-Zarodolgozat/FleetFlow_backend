@@ -84,6 +84,10 @@ namespace backend
                 };
             });
             builder.Services.AddAuthorization();
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenAnyIP(8080);
+            });
 
             var app = builder.Build();
 
