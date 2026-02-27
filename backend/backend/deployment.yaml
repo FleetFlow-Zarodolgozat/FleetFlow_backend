@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleetflow-api-deployment
+spec:
+  selector:
+    matchLabels:
+      app: fleetflow-api
+  template:
+    metadata:
+      labels:
+        app: fleetflow-api
+    spec:
+      imagePullSecrets:
+        - name: ghcr-login-secret
+      containers:
+        - name: fleetflow-api
+          image: ghcr.io/fleetflow-zarodolgozat/fleetflow-backend:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: ConnectionStrings__DefaultConnection
+              value: "${DB_CONNECTION_STRING}"
+            - name: Jwt__Key
+              value: "${JWT_KEY}"
+            - name: Jwt__Issuer
+              value: "FleetFlow app"
+            - name: Jwt__Audience
+              value: "FleetFlowUsers"
+            - name: EmailSettings__From
+              value: "fleetflow.info@gmail.com"
+            - name: EmailSettings__DisplayName
+              value: "FleetFlow"
+            - name: EmailSettings__SmtpHost
+              value: "smtp.gmail.com"
+            - name: EmailSettings__SmtpPort
+              value: "587"
+            - name: EmailSettings__Username
+              value: "${EMAIL_USERNAME}"
+            - name: EmailSettings__Password
+              value: "${EMAIL_PASSWORD}"
+            - name: Frontend__BaseUrl
+              value: "${FRONTEND_BASE_URL}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fleetflow-api-cluster-ip-service
+spec:
+  selector:
+    app: fleetflow-api
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      targetPort: 8080
+      port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fleetflow-api-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: fleetflow-ressdominik.jcloud.jedlik.cloud
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fleetflow-api-cluster-ip-service
+                port:
+                  number: 80
