@@ -32,7 +32,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ github.token }}
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -45,15 +45,6 @@ jobs:
       - uses: azure/setup-kubectl@v4
         with:
           version: 'v1.32.0'
-          
-      - name: Create GHCR pull secret
-        run: |
-          kubectl create secret docker-registry ghcr-login-secret \
-            --docker-server=ghcr.io \
-            --docker-username=${{ github.repository_owner }} \
-            --docker-password=${{ secrets.GHCR_PAT }} \
-            --docker-email=fleetflow.info@gmail.com \
-            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Configure kubeconfig
         run: |
