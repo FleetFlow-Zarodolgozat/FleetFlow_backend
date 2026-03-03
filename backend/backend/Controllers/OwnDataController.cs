@@ -48,6 +48,7 @@ namespace backend.Controllers
                 {
                     return Ok(new UserDto
                     {
+                        Id = userId,
                         FullName = user.FullName,
                         Email = user.Email,
                         Phone = user.Phone,
@@ -59,6 +60,7 @@ namespace backend.Controllers
                 {
                     return Ok(new UserDto
                     {
+                        Id = userId,
                         FullName = user.FullName,
                         Email = user.Email,
                         Phone = user.Phone,
