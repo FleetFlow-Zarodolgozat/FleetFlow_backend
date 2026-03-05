@@ -11,7 +11,7 @@ namespace backend.Dtos.FuelLogs
         [Required(ErrorMessage = "Liters is required")]
         public decimal Liters { get; set; }
         [Required(ErrorMessage = "Total cost is required")]
-        public decimal TotalCost { get; set; }
+        public int TotalCost { get; set; }
         [MaxLength(10, ErrorMessage = "Station name must not exceed 10 characters")]
         public string? StationName { get; set; }
         [MaxLength(30, ErrorMessage = "Location must not exceed 30 characters")]
