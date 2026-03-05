@@ -70,6 +70,7 @@ VALUES
 INSERT INTO notifications
 (user_id, type, title, message, related_service_request_id)
 VALUES
-(2, 'SERVICE_APPROVED', 'Szerviz jóváhagyva', 'A szerviz időpontja rögzítve lett.', 1),
-(1, 'SERVICE_CREATED', 'Új szerviz igény', 'Új szerviz igény érkezett egy járműhöz.', 1);
+(2, 'SERVICE_REQUEST', 'Szerviz jóváhagyva', 'A szerviz időpontja rögzítve lett.', 1),
+(1, 'SERVICE_REQUEST', 'Új szerviz igény', 'Új szerviz igény érkezett egy járműhöz.', 1);
+
 
