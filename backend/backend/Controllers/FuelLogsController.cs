@@ -35,7 +35,7 @@ namespace backend.Controllers
                 {
                     Id = v.Id,
                     Date = v.Date,
-                    TotalCostCur = v.TotalCost.ToString() + " Ft",
+                    TotalCostCur = Math.Round(v.TotalCost, 0).ToString() + " Ft",
                     Liters = v.Liters,
                     StationName = v.StationName,
                     ReceiptFileId = v.ReceiptFileId,
@@ -96,7 +96,7 @@ namespace backend.Controllers
                 {
                     Id = v.Id,
                     Date = v.Date,
-                    TotalCostCur = v.TotalCost.ToString() + " Ft",
+                    TotalCostCur = Math.Round(v.TotalCost, 0).ToString() + " Ft",
                     Liters = v.Liters,
                     StationName = v.StationName,
                     ReceiptFileId = v.ReceiptFileId,
