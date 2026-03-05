@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS fuel_logs (
   date DATETIME NOT NULL,
   odometer_km INT NULL,
   liters DECIMAL(10,2) NOT NULL,
-  total_cost DECIMAL(10,2) NOT NULL,
+  total_cost INT NOT NULL,
   station_name VARCHAR(255) NULL,
   location_text VARCHAR(255) NULL,
   receipt_file_id BIGINT UNSIGNED NULL,
@@ -316,5 +316,6 @@ CREATE TABLE password_tokens (
     REFERENCES users(id)
     ON DELETE CASCADE
 );
+
 
 
