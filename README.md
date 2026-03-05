@@ -248,6 +248,7 @@ A legtöbb végpont JWT tokent igényel. A tokent a `Authorization: Bearer <toke
 | `GET` | `/api/profile/mine` | ADMIN, DRIVER | Saját profiladatok lekérése |
 | `GET` | `/api/profile/assigned-vehicle` | DRIVER | Hozzárendelt jármű adatai |
 | `PATCH` | `/api/profile/edit` | ADMIN, DRIVER | Profiladatok módosítása |
+| `PATCH` | `/api/profile/delete-profile-image` | ADMIN, DRIVER | Profilkép törlése |
 | `POST` | `/api/profile/forgot-password` | – | Jelszóemlékeztető küldése |
 | `POST` | `/api/profile/set-password` | – | Jelszó beállítása tokennel |
 
