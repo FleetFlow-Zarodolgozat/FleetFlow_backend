@@ -4,12 +4,12 @@ namespace backend.Dtos.ServiceRequests
 {
     public class ApproveServiceDto
     {
-        [Required]
+        [Required(ErrorMessage = "Scheduled start is required")]
         public DateTime ScheduledStart { get; set; }
         public DateTime? ScheduledEnd { get; set; }
-        [Required, MaxLength(50)]
+        [Required(ErrorMessage = "Service location is required"), MaxLength(50, ErrorMessage = "Service location must not exceed 50 characters")]
         public string ServiceLocation { get; set; } = "";
-        [MaxLength(50)]
+        [MaxLength(50, ErrorMessage = "Decision note must not exceed 50 characters")]
         public string? AdminDecisionNote { get; set; }
     }
 }

@@ -4,11 +4,11 @@ namespace backend.Dtos.ServiceRequests
 {
     public class UploadServiceDetailsDto
     {
-        [Required]
+        [Required(ErrorMessage = "Cost is required")]
         public decimal DriverReportCost { get; set; }
-        [MaxLength(100)]
+        [MaxLength(100, ErrorMessage = "Note must not exceed 100 characters")]
         public string? DriverCloseNote { get; set; }
-        [Required]
+        [Required(ErrorMessage = "File is required")]
         public IFormFile File { get; set; } = null!;
     }
 }
