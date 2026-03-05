@@ -86,6 +86,17 @@ namespace backend
             });
             builder.Services.AddAuthorization();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy.WithOrigins("http://localhost:5174", "https://localhost:5174")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
+            });
+
             if (!builder.Environment.IsDevelopment())
             {
                 builder.WebHost.ConfigureKestrel(options =>
@@ -119,6 +130,7 @@ namespace backend
                 });
             }
 
+            app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseAuthorization();
 
