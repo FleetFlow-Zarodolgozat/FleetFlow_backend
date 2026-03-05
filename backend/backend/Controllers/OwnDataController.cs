@@ -142,6 +142,32 @@ namespace backend.Controllers
             });
         }
 
+        [HttpPatch("delete-profile-image")]
+        [Authorize(Roles = "DRIVER,ADMIN")]
+        public async Task<IActionResult> DeleteProfileImage()
+        {
+            return await this.Run(async () =>
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                    return Unauthorized();
+                ulong userId = ulong.Parse(userIdClaim);
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null)
+                    return NotFound("User not found");
+                if (user.ProfileImgFileId != null)
+                {
+                    await _fileService.DeleteFileAsync(user.ProfileImgFileId.Value);
+                    user.ProfileImgFileId = null;
+                    user.UpdatedAt = DateTime.UtcNow;
+                    int modifiedRows = await _context.SaveChangesAsync();
+                    if (modifiedRows == 0)
+                        return StatusCode(500, "Failed to delete profile image");
+                }
+                return Ok("Profile image deleted successfully");
+            });
+        }
+
         [HttpPost("forgot-password")]
         [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
