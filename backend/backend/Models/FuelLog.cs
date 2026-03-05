@@ -17,7 +17,7 @@ public partial class FuelLog
 
     public decimal Liters { get; set; }
 
-    public int TotalCost { get; set; }
+    public decimal TotalCost { get; set; }
 
     public string? StationName { get; set; }
 
