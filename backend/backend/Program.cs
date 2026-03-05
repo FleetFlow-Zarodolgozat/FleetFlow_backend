@@ -2,6 +2,7 @@
 using backend.Services;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
@@ -84,6 +85,7 @@ namespace backend
                 };
             });
             builder.Services.AddAuthorization();
+
             if (!builder.Environment.IsDevelopment())
             {
                 builder.WebHost.ConfigureKestrel(options =>
@@ -91,6 +93,18 @@ namespace backend
                     options.ListenAnyIP(8080);
                 });
             }
+
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var firstError = context.ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage;
+                    return new BadRequestObjectResult(new
+                    {
+                        message = firstError ?? "Validation error"
+                    });
+                };
+            });
 
             var app = builder.Build();
 

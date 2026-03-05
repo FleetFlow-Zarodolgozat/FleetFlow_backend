@@ -4,21 +4,21 @@ namespace backend.Dtos.Trips
 {
     public class CreateTripDto
     {
-        [Required]
+        [Required(ErrorMessage = "Start time is required")]
         public DateTime StartTime { get; set; }
-        [Required]
+        [Required(ErrorMessage = "End time is required")]
         public DateTime EndTime { get; set; }
-        [Required, MaxLength(50)]
+        [Required(ErrorMessage = "Start location is required"), MaxLength(50, ErrorMessage = "Start location must not exceed 50 characters")]
         public string StartLocation { get; set; } = "";
-        [Required, MaxLength(50)]
+        [Required(ErrorMessage = "End location is required"), MaxLength(50, ErrorMessage = "End location must not exceed 50 characters")]
         public string EndLocation { get; set; } = "";
-        [Required]
+        [Required(ErrorMessage = "Distance is required")]
         public decimal DistanceKm { get; set; }
-        [Required]
+        [Required(ErrorMessage = "Start odometer is required")]
         public int StartOdometerKm { get; set; }
-        [Required]
+        [Required(ErrorMessage = "End odometer is required")]
         public int EndOdometerKm { get; set; }
-        [MaxLength(100)]
+        [MaxLength(100, ErrorMessage = "Notes must not exceed 100 characters")]
         public string? Notes { get; set; }
     }
 }
