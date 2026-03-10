@@ -82,6 +82,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: fleetflow-api-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
 spec:
   ingressClassName: nginx
   rules:
