@@ -220,8 +220,8 @@ namespace backend.Controllers
                 var vehicle = assignment.Vehicle;
                 if (vehicle == null)
                     return NotFound("Vehicle not found");
-                if (vehicle.CurrentMileageKm < dto.StartOdometerKm)
-                    return BadRequest("Start odometer cannot be greater than vehicle's current mileage");
+                if (vehicle.CurrentMileageKm > dto.StartOdometerKm)
+                    return BadRequest("Start odometer cannot be less than current vehicle mileage");
                 var trip = new Trip
                 {
                     DriverId = user.Driver.Id,
