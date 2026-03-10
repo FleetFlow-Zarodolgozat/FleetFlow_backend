@@ -20,7 +20,6 @@ namespace backend.Controllers
         }
 
         [HttpPost]
-        [RequestSizeLimit(5 * 1024 * 1024)]
         public async Task<IActionResult> Upload(IFormFile file, [FromQuery] string folder)
         {
             return await this.Run(async () =>
@@ -31,8 +30,8 @@ namespace backend.Controllers
                 var extension = Path.GetExtension(file.FileName).ToLower();
                 if (!allowedExtensions.Contains(extension))
                     return BadRequest("Only .jpg, .jpeg, .png, .pdf files are allowed for receipt");
-                if (file.Length > 5 * 1024 * 1024)
-                    return BadRequest("Receipt file size cannot exceed 5MB");
+                if (file.Length > 15 * 1024 * 1024)
+                    return BadRequest("File size cannot exceed 15MB");
                 var allowedFolders = new[] { "profiles", "fuel_receipts", "service_recepiest" };
                 if (!allowedFolders.Contains(folder))
                     return BadRequest("Invalid folder");
