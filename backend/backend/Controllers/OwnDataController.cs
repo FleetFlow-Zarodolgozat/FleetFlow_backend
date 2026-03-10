@@ -95,7 +95,7 @@ namespace backend.Controllers
                 return Ok(new VehiclesDto
                 {
                     BrandModel = vehicle.Brand + " " + vehicle.Model,
-                    LicensePlate = vehicle.Model,
+                    LicensePlate = vehicle.LicensePlate,
                     Year = vehicle.Year ?? 0,
                     CurrentMileageKm = vehicle.CurrentMileageKm,
                     Vin = vehicle.Vin,
