@@ -103,13 +103,11 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "20m"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    cert-manager.io/cluster-issuer: "letsencrypt"
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
         - fleetflow-zarodolgozat-backend-ressdominik.jcloud.jedlik.cloud
-      secretName: fleetflow-api-tls
   rules:
     - host: fleetflow-zarodolgozat-backend-ressdominik.jcloud.jedlik.cloud
       http:
