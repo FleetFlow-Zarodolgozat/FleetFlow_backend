@@ -37,6 +37,9 @@ spec:
               port: 8080
             initialDelaySeconds: 0
             periodSeconds: 20
+          volumeMounts:
+            - name: storage-data
+              mountPath: /app/storage
           env:
             - name: ASPNETCORE_ENVIRONMENT
               value: "Production"
@@ -64,6 +67,21 @@ spec:
               value: "${EMAIL_PASSWORD}"
             - name: Frontend__BaseUrl
               value: "${FRONTEND_BASE_URL}"
+      volumes:
+        - name: storage-data
+          persistentVolumeClaim:
+            claimName: fleetflow-storage-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fleetflow-storage-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 ---
 apiVersion: v1
 kind: Service
@@ -84,8 +102,14 @@ metadata:
   name: fleetflow-api-ingress
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - fleetflow-zarodolgozat-backend-ressdominik.jcloud.jedlik.cloud
+      secretName: fleetflow-api-tls
   rules:
     - host: fleetflow-zarodolgozat-backend-ressdominik.jcloud.jedlik.cloud
       http:
