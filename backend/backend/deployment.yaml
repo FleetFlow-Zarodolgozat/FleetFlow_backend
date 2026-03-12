@@ -102,12 +102,8 @@ metadata:
   name: fleetflow-api-ingress
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "20m"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
-  tls:
-    - hosts:
-        - fleetflow-zarodolgozat-backend-ressdominik.jcloud.jedlik.cloud
   rules:
     - host: fleetflow-zarodolgozat-backend-ressdominik.jcloud.jedlik.cloud
       http:
