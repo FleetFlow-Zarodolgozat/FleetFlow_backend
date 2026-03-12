@@ -96,14 +96,31 @@ spec:
       targetPort: 8080
       port: 80
 ---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: fleetflow-api-certificate
+spec:
+  secretName: fleetflow-api-certificate
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - fleetflow-zarodolgozat-backend-ressdominik.jcloud.jedlik.cloud
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: fleetflow-api-ingress
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+      - fleetflow-zarodolgozat-backend-ressdominik.jcloud.jedlik.cloud
+      secretName: fleetflow-api-certificate
   rules:
     - host: fleetflow-zarodolgozat-backend-ressdominik.jcloud.jedlik.cloud
       http:
