@@ -2,7 +2,7 @@
 
 # 🚗 FleetFlow Backend
 
-**Modern fleet management platform – vehicle operations, driver management, trip tracking, fuel logging & service workflows**
+**Modern flottakezelő platform – járműkezelés, sofőrkezelés, útvonalkövetés, üzemanyag-nyilvántartás és szervizfolyamatok**
 
 [![.NET CI](https://github.com/FleetFlow-Zarodolgozat/FleetFlow_backend/actions/workflows/dotnet.yml/badge.svg)](https://github.com/FleetFlow-Zarodolgozat/FleetFlow_backend/actions/workflows/dotnet.yml)
 [![Docker Deploy](https://github.com/FleetFlow-Zarodolgozat/FleetFlow_backend/actions/workflows/deploy.yml/badge.svg)](https://github.com/FleetFlow-Zarodolgozat/FleetFlow_backend/actions/workflows/deploy.yml)
@@ -11,7 +11,7 @@
 
 ---
 
-## 📋 Tartalom / Table of Contents
+## 📋 Tartalom
 
 - [Áttekintés](#-áttekintés)
 - [Tech Stack](#-tech-stack)
