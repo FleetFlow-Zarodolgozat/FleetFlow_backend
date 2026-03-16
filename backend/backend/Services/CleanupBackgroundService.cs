@@ -15,7 +15,7 @@ namespace backend.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Cleanup service started");
+            _logger.LogInformation("Cleanup service started...");
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
