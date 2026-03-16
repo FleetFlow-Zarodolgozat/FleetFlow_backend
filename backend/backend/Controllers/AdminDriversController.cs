@@ -114,7 +114,18 @@ namespace backend.Controllers
                 await _emailService.SendAsync(
                     driver.Email,
                     "Your account was deactivated",
-                    "Dear " + driver.FullName + ",\n\nYour driver account has been deactivated by the administrator. You will no longer have access to the fleet management system.\n\nAll your scheduled calendar events have been removed, and any active vehicle assignments have been ended.\n\nIf you believe this was done in error or have any questions, please contact your fleet administrator.\n\nBest regards,\nFleetFlow Team"
+                    EmailTemplates.BuildHtml(
+                        "Your account was deactivated",
+                        EmailTemplates.Paragraphs(
+                            $"Dear {driver.FullName},",
+                            "Your driver account has been deactivated by the administrator. You will no longer have access to the fleet management system.",
+                            "All your scheduled calendar events have been removed, and any active vehicle assignments have been ended.",
+                            "If you believe this was done in error or have any questions, please contact your fleet administrator.",
+                            "Best regards,",
+                            "FleetFlow"
+                        ),
+                        logoContentId: "fleetflow-logo"
+                    )
                 );
                 int modifiedRows = await _context.SaveChangesAsync();
                 if (modifiedRows == 0)
@@ -137,7 +148,18 @@ namespace backend.Controllers
                 await _emailService.SendAsync(
                     driver.Email,
                     "Your account was activated",
-                    "Dear " + driver.FullName + ",\n\nGood news! Your driver account has been activated by the administrator. You now have full access to the fleet management system.\n\nYou can log in using your credentials and resume your work with the fleet.\n\nIf you have any questions or need assistance, please contact your fleet administrator.\n\nBest regards,\nFleetFlow Team"
+                    EmailTemplates.BuildHtml(
+                        "Your account was activated",
+                        EmailTemplates.Paragraphs(
+                            $"Dear {driver.FullName},",
+                            "Good news! Your driver account has been activated by the administrator. You now have full access to the fleet management system.",
+                            "You can log in using your credentials and resume your work with the fleet.",
+                            "If you have any questions or need assistance, please contact your fleet administrator.",
+                            "Best regards,",
+                            "FleetFlow"
+                        ),
+                        logoContentId: "fleetflow-logo"
+                    )
                 );
                 int modifiedRows = await _context.SaveChangesAsync();
                 if (modifiedRows == 0)
@@ -191,7 +213,20 @@ namespace backend.Controllers
                 await _emailService.SendAsync(
                     newUser.Email,
                     "Welcome to FleetFlow - Set Your Password",
-                    $"Dear {newUser.FullName},\n\nYour driver account has been created by the administrator. Welcome to the FleetFlow fleet management system!\n\nTo get started, please set your password by clicking the link below:\n\n{link}\n\nThis link will expire in 24 hours. After setting your password, you will be able to log in and access all the features of the system.\n\nIf you have any questions or need assistance, please contact your fleet administrator.\n\nBest regards,\nFleetFlow Team"
+                    EmailTemplates.BuildHtml(
+                        "Welcome to FleetFlow - Set Your Password",
+                        EmailTemplates.Paragraphs(
+                            $"Dear {newUser.FullName},",
+                            "Your driver account has been created by the administrator. Welcome to the FleetFlow fleet management system!",
+                            "To get started, please set your password by using the link below:",
+                            link,
+                            "This link will expire in 24 hours.",
+                            "If you have any questions or need assistance, please contact your fleet administrator.",
+                            "Best regards,",
+                            "FleetFlow"
+                        ),
+                        logoContentId: "fleetflow-logo"
+                    )
                 );
                 if (createdUser == 0 || createdDriver == 0)
                     return StatusCode(500, "Failed to create driver.");

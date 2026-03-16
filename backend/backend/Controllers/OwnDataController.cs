@@ -188,8 +188,21 @@ namespace backend.Controllers
             var link = $"{_configuration.GetSection("Frontend")["BaseUrl"]}/profile/set-password?token={rawToken}";
             await _emailService.SendAsync(
                 user.Email,
-                "Jelszó visszaállítás",
-                $"Kedves {user.FullName},\n\nJelszó-visszaállítási kérést kaptunk a fiókodhoz. Az új jelszó beállításához kattints az alábbi linkre:\n\n{link}\n\nA link 1 óráig érvényes. Ha nem te kérted a jelszó-visszaállítást, kérjük hagyd figyelmen kívül ezt az e-mailt.\n\nÜdvözlettel,\nFleetFlow Team"
+                "Password reset",
+                EmailTemplates.BuildHtml(
+                    "Password reset",
+                    EmailTemplates.Paragraphs(
+                        $"Dear {user.FullName},",
+                        "We received a request to reset the password for your account.",
+                        "To set a new password, please use the link below:",
+                        link,
+                        "This link is valid for 1 hour.",
+                        "If you did not request a password reset, you can safely ignore this email.",
+                        "Best regards,",
+                        "FleetFlow"
+                    ),
+                    logoContentId: "fleetflow-logo"
+                )
             );
             return Ok();
         }
