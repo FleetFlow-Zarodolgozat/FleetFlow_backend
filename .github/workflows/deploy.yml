@@ -61,5 +61,10 @@ jobs:
         run: |
           envsubst '$DB_CONNECTION_STRING $JWT_KEY $EMAIL_USERNAME $EMAIL_PASSWORD $FRONTEND_BASE_URL $IMAGE_TAG' < backend/backend/deployment.yaml | kubectl apply -f -
 
-      - name: Force rollout restart
-        run: kubectl rollout restart deployment/fleetflow-api-deployment
+      - name: Delete untagged images from GHCR
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: fleetflow-backend
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: true
