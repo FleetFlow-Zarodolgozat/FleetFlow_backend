@@ -24,6 +24,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Set image tag
+        run: echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -39,7 +42,9 @@ jobs:
         with:
           context: ./backend/backend
           push: true
-          tags: ghcr.io/fleetflow-zarodolgozat/fleetflow-backend:latest
+          tags: |
+            ghcr.io/fleetflow-zarodolgozat/fleetflow-backend:${{ env.IMAGE_TAG }}
+            ghcr.io/fleetflow-zarodolgozat/fleetflow-backend:latest
           file: ./backend/backend/Dockerfile
 
       - uses: azure/setup-kubectl@v4
@@ -54,7 +59,7 @@ jobs:
 
       - name: Deploy with env substitution
         run: |
-          envsubst '$DB_CONNECTION_STRING $JWT_KEY $EMAIL_USERNAME $EMAIL_PASSWORD $FRONTEND_BASE_URL' < backend/backend/deployment.yaml | kubectl apply -f -
+          envsubst '$DB_CONNECTION_STRING $JWT_KEY $EMAIL_USERNAME $EMAIL_PASSWORD $FRONTEND_BASE_URL $IMAGE_TAG' < backend/backend/deployment.yaml | kubectl apply -f -
 
       - name: Force rollout restart
         run: kubectl rollout restart deployment/fleetflow-api-deployment
