@@ -312,7 +312,7 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" "server=localhost;
 dotnet user-secrets set "Jwt:Key" "your-super-secret-jwt-key-min-32-chars"
 dotnet user-secrets set "EmailSettings:Username" "your@gmail.com"
 dotnet user-secrets set "EmailSettings:Password" "your-app-password"
-dotnet user-secrets set "Frontend:BaseUrl" "http://localhost:3000"
+dotnet user-secrets set "Frontend:BaseUrl" "http://localhost:5174"
 
 # 4. Indítsd el az alkalmazást
 dotnet run
@@ -343,7 +343,7 @@ docker run -d \
   -e EmailSettings__SmtpPort="587" \
   -e EmailSettings__Username="your@gmail.com" \
   -e EmailSettings__Password="your-app-password" \
-  -e Frontend__BaseUrl="http://localhost:3000" \
+  -e Frontend__BaseUrl="http://yourfrontend.example.com" \
   --name fleetflow-backend \
   fleetflow-backend:latest
 ```
@@ -415,7 +415,7 @@ export EMAIL_PASSWORD="your-app-password"
 export FRONTEND_BASE_URL="https://yourfrontend.example.com"
 
 # Deploy alkalmazása
-envsubst '$DB_CONNECTION_STRING $JWT_KEY $EMAIL_USERNAME $EMAIL_PASSWORD $FRONTEND_BASE_URL' \
+envsubst '$DB_CONNECTION_STRING $JWT_KEY $EMAIL_USERNAME $EMAIL_PASSWORD $FRONTEND_BASE_URL $IMAGE_TAG' \
   < backend/backend/deployment.yaml | kubectl apply -f -
 
 # Rollout újraindítása
@@ -473,7 +473,7 @@ Aktiválódik: `push` a `main` branchre
 | kubectl setup | kubectl v1.32.0 telepítése |
 | kubeconfig | Kubernetes konfig beállítása |
 | Deploy | `envsubst` + `kubectl apply` |
-| Rollout Restart | Deployment újraindítása |
+| Delete untagged images | Tag nélküli image-ek törlése |
 
 ---
 
