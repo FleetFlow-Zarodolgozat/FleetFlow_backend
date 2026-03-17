@@ -1,6 +1,6 @@
 # Base image for running the app
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
-USER root
+USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
 
@@ -23,5 +23,4 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 RUN mkdir -p /app/storage && chmod -R 777 /app/storage
-USER root
 ENTRYPOINT ["dotnet", "backend.dll"]
