@@ -299,7 +299,7 @@ namespace backend.Controllers
                 serviceRequest.DriverReportCost = dto.DriverReportCost;
                 if (dto.File != null)
                 {
-                    var fileId = await _fileService.SaveFileAsync(dto.File, "service_requests", userId);
+                    var fileId = await _fileService.SaveFileAsync(dto.File, "service_receipts", userId);
                     serviceRequest.InvoiceFileId = fileId;
                 }
                 serviceRequest.DriverCloseNote = dto.DriverCloseNote;
@@ -344,7 +344,7 @@ namespace backend.Controllers
                 {
                     if (serviceRequest.InvoiceFileId != null)
                         await _fileService.DeleteFileAsync(serviceRequest.InvoiceFileId.Value);
-                    var newId = await _fileService.SaveFileAsync(dto.File, "service_requests", userId);
+                    var newId = await _fileService.SaveFileAsync(dto.File, "service_receipts", userId);
                     serviceRequest.InvoiceFileId = newId;
                 }
                 if (dto.DriverCloseNote != null)

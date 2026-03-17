@@ -32,7 +32,7 @@ namespace backend.Controllers
                     return BadRequest("Only .jpg, .jpeg, .png, .pdf files are allowed for receipt");
                 if (file.Length > 15 * 1024 * 1024)
                     return BadRequest("File size cannot exceed 15MB");
-                var allowedFolders = new[] { "profiles", "fuel_receipts", "service_recepiest" };
+                var allowedFolders = new[] { "profiles", "fuel_receipts", "service_receipts" };
                 if (!allowedFolders.Contains(folder))
                     return BadRequest("Invalid folder");
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
