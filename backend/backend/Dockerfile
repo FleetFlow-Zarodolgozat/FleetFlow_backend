@@ -1,6 +1,6 @@
 # Base image for running the app
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
-USER $APP_UID
+USER root
 WORKDIR /app
 EXPOSE 8080
 
@@ -22,4 +22,6 @@ RUN dotnet publish "./backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+RUN mkdir -p /app/storage && chmod -R 777 /app/storage
+USER root
 ENTRYPOINT ["dotnet", "backend.dll"]
