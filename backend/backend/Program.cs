@@ -131,6 +131,7 @@ namespace backend
             }
 
             app.UseCors("AllowFrontend");
+            app.UseStaticFiles();
             app.UseAuthentication();
             app.UseAuthorization();
 

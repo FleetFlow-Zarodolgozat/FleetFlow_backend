@@ -14,7 +14,7 @@ namespace backend.Services
             var safeSubject = WebUtility.HtmlEncode(subject);
             var headerLogo = string.IsNullOrWhiteSpace(logoContentId)
                 ? ""
-                : $"<img class=\"no-invert\" src=\"cid:{WebUtility.HtmlEncode(logoContentId)}\" alt=\"{WebUtility.HtmlEncode(companyName)}\" style=\"height:44px; width:auto; display:block;\" />";
+                : $"<img src=\"cid:{WebUtility.HtmlEncode(logoContentId)}\" alt=\"{WebUtility.HtmlEncode(companyName)}\" style=\"height:44px; width:auto; display:block;\" />";
             return "<!doctype html>" +
                    "<html lang=\"en\">" +
                    "<head>" +
