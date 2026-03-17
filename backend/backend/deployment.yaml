@@ -86,9 +86,6 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  selector:
-    matchLabels:
-      student: ress-dominik-ferenc
 ---
 apiVersion: v1
 kind: Service
