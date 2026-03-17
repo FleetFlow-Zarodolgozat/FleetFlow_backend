@@ -21,14 +21,7 @@ namespace backend.Services
             message.Subject = subject;
             message.IsBodyHtml = true;
             message.From = new MailAddress(email["From"]!, email["DisplayName"]);
-            var baseDir = AppContext.BaseDirectory;
-            var logoPath = Path.Combine(baseDir, "fleetflow_logo_jpg.jpg");
-            if (!File.Exists(logoPath))
-                logoPath = Path.Combine(baseDir, "backend", "fleetflow_logo_jpg.jpg");
-            if (!File.Exists(logoPath))
-                logoPath = Path.Combine(Directory.GetCurrentDirectory(), "fleetflow_logo_jpg.jpg");
-            if (!File.Exists(logoPath))
-                logoPath = Path.Combine(Directory.GetCurrentDirectory(), "backend", "fleetflow_logo_jpg.jpg");
+            var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "fleetflow_logo_jpg.jpg");
             if (File.Exists(logoPath) && html.Contains("cid:fleetflow-logo", StringComparison.OrdinalIgnoreCase))
             {
                 var view = AlternateView.CreateAlternateViewFromString(html, null, MediaTypeNames.Text.Html);
