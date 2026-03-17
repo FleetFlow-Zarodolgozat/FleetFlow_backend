@@ -16,8 +16,13 @@ spec:
     spec:
       imagePullSecrets:
         - name: ghcr-login-secret
-      securityContext:
-        fsGroup: 1654
+      initContainers:
+        - name: fix-volume-permissions
+          image: busybox
+          command: ["sh", "-c", "chown -R 1654:1654 /app/storage"]
+          volumeMounts:
+            - name: storage-data
+              mountPath: /app/storage
       containers:
         - name: fleetflow-api
           image: ghcr.io/fleetflow-zarodolgozat/fleetflow-backend:${IMAGE_TAG}
