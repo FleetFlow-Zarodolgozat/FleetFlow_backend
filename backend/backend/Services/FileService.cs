@@ -17,29 +17,37 @@ namespace backend.Services
 
         public async Task<ulong> SaveFileAsync(IFormFile file, string folder, ulong uploadedByUserId)
         {
-            var storagePath = Path.Combine(_env.ContentRootPath, "storage", folder);
-            if (!Directory.Exists(storagePath))
-                Directory.CreateDirectory(storagePath);
-            var storedName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            var fullPath = Path.Combine(storagePath, storedName);
-            using (var stream = new FileStream(fullPath, FileMode.Create))
+            try
             {
-                await file.CopyToAsync(stream);
+                var storagePath = Path.Combine(_env.ContentRootPath, "storage", folder);
+                if (!Directory.Exists(storagePath))
+                    Directory.CreateDirectory(storagePath);
+                var storedName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                var fullPath = Path.Combine(storagePath, storedName);
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+                var entity = new Models.File
+                {
+                    UploadedByUserId = uploadedByUserId,
+                    OriginalName = file.FileName,
+                    StoredName = storedName,
+                    MimeType = file.ContentType,
+                    SizeBytes = (ulong)file.Length,
+                    StorageProvider = "LOCAL"
+                };
+                _context.Files.Add(entity);
+                int modifiedRows = await _context.SaveChangesAsync();
+                if (modifiedRows == 0)
+                    throw new Exception("Failed to save file metadata");
+                return entity.Id;
             }
-            var entity = new Models.File
+            catch (Exception ex)
             {
-                UploadedByUserId = uploadedByUserId,
-                OriginalName = file.FileName,
-                StoredName = storedName,
-                MimeType = file.ContentType,
-                SizeBytes = (ulong)file.Length,
-                StorageProvider = "LOCAL"
-            };
-            _context.Files.Add(entity);
-            int modifiedRows = await _context.SaveChangesAsync();
-            if (modifiedRows == 0)
-                throw new Exception("Failed to save file metadata");
-            return entity.Id;
+                Console.WriteLine("Upload error: " + ex.ToString());
+                throw new Exception("Unexpected error: " + ex.Message);
+            }
         }
 
         public async Task<(byte[] Content, string MimeType, string FileName)> GetFileAsync(ulong id)
