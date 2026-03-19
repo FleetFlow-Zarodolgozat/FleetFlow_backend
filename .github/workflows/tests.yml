@@ -23,7 +23,13 @@ jobs:
         run: dotnet restore tests/tests/tests.csproj
 
       - name: Build
+        env:
+          EmailSettings__Username: ${{ secrets.EMAIL_USERNAME }}
+          EmailSettings__Password: ${{ secrets.EMAIL_PASSWORD }}
         run: dotnet build tests/tests/tests.csproj --no-restore
 
       - name: Run unit tests
+        env:
+          EmailSettings__Username: ${{ secrets.EMAIL_USERNAME }}
+          EmailSettings__Password: ${{ secrets.EMAIL_PASSWORD }}
         run: dotnet test tests/tests/tests.csproj --no-build --verbosity normal
