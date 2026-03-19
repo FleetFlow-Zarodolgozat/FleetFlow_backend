@@ -7,10 +7,16 @@ namespace backend;
 
 public partial class FlottakezeloDbContext : DbContext
 {
-    private readonly IConfiguration _configuration;
+    private readonly IConfiguration? _configuration;
+
     public FlottakezeloDbContext(IConfiguration configuration)
     {
         _configuration = configuration;
+    }
+
+    public FlottakezeloDbContext(DbContextOptions<FlottakezeloDbContext> options)
+        : base(options)
+    {
     }
 
     public FlottakezeloDbContext(DbContextOptions<FlottakezeloDbContext> options, IConfiguration configuration)
@@ -44,9 +50,7 @@ public partial class FlottakezeloDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseMySQL(_configuration.GetSection("ConnectionStrings")["DefaultConnection"]!);
-        }
+            optionsBuilder.UseMySQL(_configuration!.GetSection("ConnectionStrings")["DefaultConnection"]!);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
