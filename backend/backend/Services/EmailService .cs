@@ -8,9 +8,12 @@ namespace backend.Services
     public class EmailService : IEmailService
     {
         private readonly IConfiguration configuration;
-        public EmailService(IConfiguration configuration)
+        private readonly Func<string, int, NetworkCredential, ISmtpClientWrapper>? _smtpClientFactory;
+
+        public EmailService(IConfiguration configuration, Func<string, int, NetworkCredential, ISmtpClientWrapper>? smtpClientFactory = null)
         {
             this.configuration = configuration;
+            _smtpClientFactory = smtpClientFactory;
         }
 
         public async Task SendAsync(string to, string subject, string html)
@@ -35,10 +38,9 @@ namespace backend.Services
             }
             else
                 message.Body = html;
-            using var smtp = new SmtpClient(email["SmtpHost"], int.Parse(email["SmtpPort"]!));
-            smtp.EnableSsl = true;
-            smtp.UseDefaultCredentials = false;
-            smtp.Credentials = new NetworkCredential(email["Username"], email["Password"]);
+            using var smtp = _smtpClientFactory != null
+                ? _smtpClientFactory(email["SmtpHost"]!, int.Parse(email["SmtpPort"]!), new NetworkCredential(email["Username"], email["Password"]))
+                : new SmtpClientWrapper(email["SmtpHost"]!, int.Parse(email["SmtpPort"]!), new NetworkCredential(email["Username"], email["Password"]));
             await smtp.SendMailAsync(message);
         }
     }
