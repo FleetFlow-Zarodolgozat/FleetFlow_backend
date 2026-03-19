@@ -510,6 +510,85 @@ A deploy pipeline az alábbi GitHub Secrets-eket igényli:
 
 ---
 
+## ✅ Tesztek
+
+A repository-ben található egy külön **`tests`** nevű .NET teszt projekt, ami egyrészt **unit teszteket (xUnit + Moq)**, másrészt egy **Fetch Client API teszt kollekciót** tartalmaz.
+
+### 📁 Struktúra
+
+- Solution: `tests/tests.slnx`
+  - Backend projekt: `backend/backend/backend.csproj`
+  - Teszt projekt: `tests/tests/tests.csproj`
+- Unit tesztek és segédosztályok:
+  - `tests/tests/Controllers/OwnDataControllerTests.cs`
+  - `tests/tests/Services/EmailServiceTests.cs`
+  - `tests/tests/TestHelpers/TestControllerFactory.cs`
+  - `tests/tests/TestHelpers/TestDbContextFactory.cs`
+- API teszt kollekció (Fetch Client):
+  - `tests/tests/fetch-client-collection_FleetFlow_API_tests.json`
+
+### 🧪 Unit tesztek (xUnit)
+
+A `tests/tests/tests.csproj` projekt `net10.0` targettel fut, és a következő főbb csomagokat használja:
+
+- `xunit`, `xunit.runner.visualstudio`
+- `Moq`
+- `Microsoft.EntityFrameworkCore.InMemory` (in-memory EF Core teszt DB-hez)
+- `coverlet.collector` (code coverage-hez)
+
+**Meglévő unit tesztek:**
+
+#### 1) OwnDataControllerTests (`tests/tests/Controllers/OwnDataControllerTests.cs`)
+
+- `GetOwnProfile_ShouldReturnUnauthorized_WhenNoUser`  
+  Ellenőrzi, hogy ha nincs user a request context-ben, akkor a `GetOwnProfile()` **401 Unauthorized** választ ad.
+
+- `ForgotPassword_ShouldSendEmail_WhenUserExists`  
+  In-memory DB-be beszúr egy aktív felhasználót, majd meghívja a `ForgotPassword()` metódust, és ellenőrzi, hogy az `IEmailService.SendAsync(...)` **pontosan egyszer** meghívódik.
+
+A controllerek példányosítását a `TestControllerFactory` intézi, ahol mock-olva van:
+
+- `IFileService`
+- `ITokenService` (fixen `"test-token"`-t ad vissza)
+- `IEmailService` (vagy átadott mock, vagy alap mock)
+
+Illetve teszt konfigurációként be van állítva a `Frontend:BaseUrl` is.
+
+A DB-hez a `TestDbContextFactory` egy **EF Core InMemory** adatbázist hoz létre mindig új névvel (GUID), így a tesztek izoláltak.
+
+#### 2) EmailServiceTests (`tests/tests/Services/EmailServiceTests.cs`)
+
+- `SendAsync_ShouldNotThrow`  
+  In-memory konfigurációval létrehozza az `EmailService`-t (SMTP host/port/from/displayname), majd meghívja a `SendAsync(...)` metódust. A teszt célja, hogy a hívás **ne dobjon kivételt**.
+
+> Megjegyzés: a teszt `AddUserSecrets<EmailServiceTests>()`-t is használ, így ha szükséges (pl. username/password), user secretsből is fel tudja venni a hiányzó email beállításokat.
+
+### 🌐 API tesztek (Fetch Client kollekció)
+
+A `tests/tests/fetch-client-collection_FleetFlow_API_tests.json` egy exportált **Fetch Client** collection, amiben **5 db API teszt / request** található:
+
+- **POST**: Login (`/api/login`)
+- **GET**: Saját profil lekérése (`/api/profile/mine`)
+- **PATCH**: Egy meglévő erőforrás módosítása (`/api/service-requests/edit-uploaded-data/1`)
+- **DELETE**: Értesítés törlése (`/api/notifications/2`)
+- **POST**: Fuel log létrehozása (`/api/fuellogs`)
+
+A requestek a publikus backend URL-t használják (Jedlik cloudos domain), és több végpont **Bearer tokennel** hitelesít (a token a kollekcióban szerepel).
+
+### ▶️ Futtatás
+
+**Unit tesztek futtatása:**
+```bash
+dotnet test tests/tests.csproj
+```
+
+**Teszt solution futtatása:**
+```bash
+dotnet test tests/tests.slnx
+```
+
+---
+
 <div align="center">
 
 Made with ❤️ by the FleetFlow Team
