@@ -5,6 +5,7 @@
 **Modern flottakezelő platform – járműkezelés, sofőrkezelés, útvonalkövetés, üzemanyag-nyilvántartás és szervizfolyamatok**
 
 [![.NET CI](https://github.com/FleetFlow-Zarodolgozat/FleetFlow_backend/actions/workflows/dotnet.yml/badge.svg)](https://github.com/FleetFlow-Zarodolgozat/FleetFlow_backend/actions/workflows/dotnet.yml)
+[![Unit Tests](https://github.com/FleetFlow-Zarodolgozat/FleetFlow_backend/actions/workflows/tests.yml/badge.svg)](https://github.com/FleetFlow-Zarodolgozat/FleetFlow_backend/actions/workflows/tests.yml)
 [![Docker Deploy](https://github.com/FleetFlow-Zarodolgozat/FleetFlow_backend/actions/workflows/deploy.yml/badge.svg)](https://github.com/FleetFlow-Zarodolgozat/FleetFlow_backend/actions/workflows/deploy.yml)
 
 </div>
