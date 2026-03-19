@@ -15,9 +15,9 @@ namespace tests.Services
                 {"EmailSettings:From", "test@test.com"},
                 {"EmailSettings:DisplayName", "Test"}
             };
-            IConfiguration config = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings!).AddUserSecrets<EmailServiceTests>().Build();
+            IConfiguration config = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings!).AddUserSecrets<EmailServiceTests>().AddEnvironmentVariables().Build();
             var service = new EmailService(config);
-            await service.SendAsync("fleetflow.info@gmail.com", "subject", "<b>hello</b>");
+            await service.SendAsync(config["EmailSettings:Username"]!, "subject", "<b>hello</b>");
         }
     }
 }

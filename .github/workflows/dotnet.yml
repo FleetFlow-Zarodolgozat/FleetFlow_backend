@@ -1,5 +1,3 @@
-# This is your updated dotnet.yml
-
 name: .NET CI
 
 on:
