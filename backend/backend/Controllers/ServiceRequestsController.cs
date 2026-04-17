@@ -1,13 +1,13 @@
 ﻿using backend.Dtos;
 using backend.Dtos.FuelLogs;
 using backend.Dtos.ServiceRequests;
+using backend.Models;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using backend.Models;
 
 namespace backend.Controllers
 {
@@ -41,6 +41,7 @@ namespace backend.Controllers
                     Description = v.Description,
                     Status = v.Status,
                     ScheduledStart = v.ScheduledStart,
+                    ServiceLocation = v.ServiceLocation,
                     DriverReportCost = v.DriverReportCost,
                     InvoiceFileId = v.InvoiceFileId,
                     ClosedAt = v.ClosedAt
@@ -386,8 +387,12 @@ namespace backend.Controllers
                 serviceRequest.Status = "CLOSED";
                 serviceRequest.ClosedAt = DateTime.UtcNow;
                 serviceRequest.UpdatedAt = DateTime.UtcNow;
-                serviceRequest.Vehicle.Status = "ACTIVE";
-                serviceRequest.Vehicle.UpdatedAt = DateTime.UtcNow;
+                var hasActiveServiceRequest = await _context.ServiceRequests.AnyAsync(sr => sr.VehicleId == serviceRequest.VehicleId && (sr.Status == "APPROVED" || sr.Status == "DRIVER_COST"));
+                if (!hasActiveServiceRequest)
+                {
+                    serviceRequest.Vehicle.Status = "ACTIVE";
+                    serviceRequest.Vehicle.UpdatedAt = DateTime.UtcNow;
+                }   
                 await _notificationService.CreateAsync(
                     serviceRequest.CreatedByDriverUserId,
                     "SERVICE_REQUEST",

@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using backend.Models;
+using backend.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services
 {
@@ -6,11 +8,13 @@ namespace backend.Services
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<CleanupBackgroundService> _logger;
+        private readonly INotificationService _notificationService;
 
-        public CleanupBackgroundService(IServiceScopeFactory scopeFactory, ILogger<CleanupBackgroundService> logger)
+        public CleanupBackgroundService(IServiceScopeFactory scopeFactory, ILogger<CleanupBackgroundService> logger, INotificationService notificationService)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -20,6 +24,7 @@ namespace backend.Services
             {
                 try
                 {
+                    await AutomaticServiceRequestClosure(_scopeFactory.CreateScope().ServiceProvider.GetRequiredService<FlottakezeloDbContext>());
                     await RunCleanupAsync();
                 }
                 catch (Exception ex)
@@ -89,16 +94,14 @@ namespace backend.Services
                 }
             }
             context.Vehicles.RemoveRange(deletedVehicles);
-            var deletedServiceRequests = await context.ServiceRequests.Where(s => s.ClosedAt < limitDate).ToListAsync();
-            context.ServiceRequests.RemoveRange(deletedServiceRequests);
-            var serviceRequestNotifications = await context.Notifications.Where(n => n.RelatedServiceRequestId != null && deletedServiceRequests.Select(s => s.Id).Contains(n.RelatedServiceRequestId.Value)).ToListAsync();
+            var rejectedServiceRequests = await context.ServiceRequests.Where(s => s.Status == "REJECTED" && s.UpdatedAt < limitDate).ToListAsync();
+            context.ServiceRequests.RemoveRange(rejectedServiceRequests);
+            var invalidServiceRequests = await context.ServiceRequests.Where(s => s.Status == "CLOSED" && s.InvoiceFileId == null && s.UpdatedAt < limitDate).ToListAsync();
+            context.ServiceRequests.RemoveRange(invalidServiceRequests);
+            var serviceRequestNotifications = await context.Notifications.Where(n => n.RelatedServiceRequestId != null && (invalidServiceRequests.Select(s => s.Id).Contains(n.RelatedServiceRequestId.Value) || rejectedServiceRequests.Select(s => s.Id).Contains(n.RelatedServiceRequestId.Value))).ToListAsync();
             context.Notifications.RemoveRange(serviceRequestNotifications);
-            var serviceRequestCalendarEvents = await context.CalendarEvents.Where(c => c.RelatedServiceRequestId != null && deletedServiceRequests.Select(s => s.Id).Contains(c.RelatedServiceRequestId.Value)).ToListAsync();
+            var serviceRequestCalendarEvents = await context.CalendarEvents.Where(c => c.RelatedServiceRequestId != null && invalidServiceRequests.Select(s => s.Id).Contains(c.RelatedServiceRequestId.Value)).ToListAsync();
             context.CalendarEvents.RemoveRange(serviceRequestCalendarEvents);
-            foreach (var s in deletedServiceRequests)
-            {
-                DeletePhysicalFile(env, s.InvoiceFile, context);
-            }
             var deltedFuelLogs = await context.FuelLogs.Where(f => f.UpdatedAt < limitDate && f.IsDeleted == true).ToListAsync();
             context.FuelLogs.RemoveRange(deltedFuelLogs);
             foreach (var f in deltedFuelLogs)
@@ -122,8 +125,67 @@ namespace backend.Services
             var storageRoot = Path.Combine(env.ContentRootPath, "storage");
             var path = Directory.GetFiles(storageRoot, file!.StoredName, SearchOption.AllDirectories).FirstOrDefault();
             if (path != null)
-                File.Delete(path);
+                System.IO.File.Delete(path);
             context.Files.Remove(file);
+        }
+
+        private async Task AutomaticServiceRequestClosure(FlottakezeloDbContext context)
+        {
+            var limitDate = DateTime.UtcNow.AddDays(-30);
+            var limitDate2 = DateTime.UtcNow.AddDays(-7);
+            var serviceRequestsToReject = await context.ServiceRequests.Include(sr => sr.Vehicle).Where(s => s.Status == "REQUESTED" && s.CreatedAt < limitDate2).ToListAsync();
+            foreach (var request in serviceRequestsToReject)
+            {
+                request.Status = "REJECTED";
+                request.UpdatedAt = DateTime.UtcNow;
+                request.AdminUserId = null;
+                request.AdminDecisionNote = "Automatically rejected after 7 days of inactivity";
+                await _notificationService.CreateAsync(
+                    request.CreatedByDriverUserId,
+                    "SERVICE_REQUEST",
+                    "Service Request Rejected",
+                    $"Your service request '{request.Title}' has been rejected: {request.AdminDecisionNote}",
+                    request.Id
+                );
+            }
+            var serviceRequestsToDriverCost = await context.ServiceRequests.Include(sr => sr.Vehicle).Include(d => d.Driver).Where(s => s.Status == "APPROVED" && s.UpdatedAt < limitDate).ToListAsync();
+            foreach (var request in serviceRequestsToDriverCost)
+            {
+                request.Status = "DRIVER_COST";
+                request.DriverReportCost = 0;
+                request.InvoiceFileId = null;
+                request.DriverCloseNote = $"Automatically moved to cost reported after 30 days of inactivity. Contact with the driver: {request.Driver.User.Email}";
+                request.UpdatedAt = DateTime.UtcNow;
+                await _notificationService.CreateAsync(
+                    request.AdminUserId ?? 0,
+                    "SERVICE_REQUEST",
+                    "Service Request Details Uploaded",
+                    $"Service request '{request.Title}' has been edited: {request.DriverCloseNote}",
+                    request.Id
+                );
+            }
+            var serviceRequestsToClose = await context.ServiceRequests.Include(sr => sr.Vehicle).Where(s => s.Status == "DRIVER_COST" && s.UpdatedAt < limitDate2).ToListAsync();
+            foreach(var request in serviceRequestsToClose)
+            {
+                request.Status = "CLOSED";
+                request.ClosedAt = DateTime.UtcNow;
+                request.UpdatedAt = DateTime.UtcNow;
+                var hasActiveServiceRequest = await context.ServiceRequests.AnyAsync(sr => sr.VehicleId == request.VehicleId && (sr.Status == "APPROVED" || sr.Status == "DRIVER_COST"));
+                if (!hasActiveServiceRequest)
+                {
+                    request.Vehicle.Status = "ACTIVE";
+                    request.Vehicle.UpdatedAt = DateTime.UtcNow;
+                }
+                await _notificationService.CreateAsync(
+                    request.AdminUserId ?? 0,
+                    "SERVICE_REQUEST",
+                    "Service Request Closed",
+                    $"Service request '{request.Title}' has been edited: Automatically closed after 7 days of inactivity.",
+                    request.Id
+                );
+            }
+            int updatedRows = await context.SaveChangesAsync();
+            _logger.LogInformation("Automatic service request closure executed at {time}, updated rows: {updatedRows}", DateTime.UtcNow, updatedRows);
         }
     }
 }
