@@ -98,6 +98,7 @@ namespace backend.Controllers
                 Driver? driver1 = await _context.Drivers.FirstOrDefaultAsync(x => x.UserId == id);
                 List<CalendarEvent> calendarEvents = await _context.CalendarEvents.Where(x => x.CreatedByUserId == id || x.OwnerUserId == id).ToListAsync();
                 driver.IsActive = false;
+                driver.UpdatedAt = DateTime.UtcNow;
                 _context.Users.Update(driver);
                 if (calendarEvents.Count > 0)
                     _context.CalendarEvents.RemoveRange(calendarEvents);
@@ -110,7 +111,6 @@ namespace backend.Controllers
                         _context.VehicleAssignments.Update(vehicleAssignment);
                     }
                 }
-                driver.UpdatedAt = DateTime.UtcNow;
                 await _emailService.SendAsync(
                     driver.Email,
                     "Your account was deactivated",

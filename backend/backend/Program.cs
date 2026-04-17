@@ -3,6 +3,7 @@ using backend.Services;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
@@ -90,10 +91,7 @@ namespace backend
             {
                 options.AddPolicy("AllowFrontend", policy =>
                 {
-                    policy.WithOrigins("http://localhost:5174", "https://localhost:5174")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
+                    policy.WithOrigins("http://localhost:5174", "https://localhost:5174").AllowAnyHeader().AllowAnyMethod().AllowCredentials();
                 });
             });
 
@@ -117,6 +115,15 @@ namespace backend
                 };
             });
 
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.AddFixedWindowLimiter("api", opt =>
+                {
+                    opt.PermitLimit = 100;
+                    opt.Window = TimeSpan.FromMinutes(1);
+                });
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -132,6 +139,7 @@ namespace backend
 
             app.UseCors("AllowFrontend");
             app.UseStaticFiles();
+            app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
 
